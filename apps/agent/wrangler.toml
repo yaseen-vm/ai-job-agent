@@ -6,20 +6,18 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "ai-job-agent-db"
-database_id = "REPLACE_WITH_D1_ID"
+database_id = "7781002f-852a-4156-bd7a-3d31f2585cc0"
 
 [[r2_buckets]]
 binding = "R2"
 bucket_name = "ai-job-agent-files"
 
+[[vectorize]]
+binding = "VECTORIZE_PROFILES"
+index_name = "profile-embeddings"
+
 [ai]
 binding = "AI"
-
-[[queues.consumers]]
-queue = "ai-job-agent-agent"
-max_batch_size = 5
-max_batch_timeout = 60
-max_retries = 2
 
 [vars]
 ENVIRONMENT = "development"

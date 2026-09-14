@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { ulid } from '../lib/ulid.ts';
 import { errNotFound, errValidation, errInternal } from '../lib/errors.ts';
 import { requireAuth, type AuthVariables } from '../middleware/auth.ts';
+import { runExtractionAgent } from '../agents/extraction.ts';
 import type { Env } from '../types.ts';
 
 type Variables = AuthVariables;
@@ -104,12 +105,13 @@ profileRouter.post('/resume', async (c) => {
     .bind(agentRunId, userId, 'extraction', 'pending', JSON.stringify({ resume_r2_key: r2Key }), '[]', now)
     .run();
 
-  await c.env.QUEUE_AGENT.send({
-    type: 'extraction',
-    user_id: userId,
-    resume_r2_key: r2Key,
-    agent_run_id: agentRunId,
-  });
+  c.executionCtx.waitUntil(
+    runExtractionAgent(c.env, agentRunId, userId, r2Key).catch(async (err) => {
+      console.error('extraction agent error', err);
+      await c.env.DB.prepare(`UPDATE agent_runs SET status='failed',error=?,completed_at=? WHERE id=?`)
+        .bind(String(err), Date.now(), agentRunId).run();
+    })
+  );
 
   return c.json({ agent_run_id: agentRunId, resume_r2_key: r2Key }, 202);
 });

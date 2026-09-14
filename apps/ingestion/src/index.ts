@@ -2,39 +2,11 @@ import { ulid } from './ulid.ts';
 import { fetchRemotiveJobs, normalizeRemotiveJob } from './adapters/remotive.ts';
 import type { IngestionEnv } from './types.ts';
 
-interface IngestionMessage {
-  type: 'discovery';
-  source_name: string;
-}
-
 export default {
-  async queue(batch: MessageBatch<IngestionMessage>, env: IngestionEnv): Promise<void> {
-    for (const msg of batch.messages) {
-      try {
-        await handleMessage(msg.body, env);
-        msg.ack();
-      } catch (err) {
-        console.error('Ingestion error', msg.body, err);
-        msg.retry();
-      }
-    }
-  },
-
-  // Scheduled trigger: runs daily to pull new jobs
   async scheduled(_event: ScheduledEvent, env: IngestionEnv): Promise<void> {
     await ingestRemotive(env);
   },
 } satisfies ExportedHandler<IngestionEnv>;
-
-async function handleMessage(msg: IngestionMessage, env: IngestionEnv): Promise<void> {
-  if (msg.type === 'discovery') {
-    if (msg.source_name === 'remotive') {
-      await ingestRemotive(env);
-    } else {
-      console.warn(`Unknown source: ${msg.source_name}`);
-    }
-  }
-}
 
 async function ingestRemotive(env: IngestionEnv): Promise<void> {
   const categories = ['software-dev', 'devops-sysadmin', 'product'];
@@ -92,9 +64,8 @@ async function ingestRemotive(env: IngestionEnv): Promise<void> {
           const embedding = await env.AI.run('@cf/baai/bge-base-en-v1.5', { text: [text] });
           const vector = (embedding as { data: number[][] }).data[0];
 
-          const vectorize = (env as unknown as { VECTORIZE: VectorizeIndex }).VECTORIZE;
-          if (vectorize) {
-            await vectorize.upsert([{ id, values: vector, metadata: { job_id: id } }]);
+          if (env.VECTORIZE_JOBS) {
+            await env.VECTORIZE_JOBS.upsert([{ id, values: vector, metadata: { job_id: id } }]);
           }
         } catch (embedErr) {
           console.error('Embedding error for job', id, embedErr);

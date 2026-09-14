@@ -6,33 +6,34 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "ai-job-agent-db"
-database_id = "REPLACE_WITH_D1_ID"
+database_id = "7781002f-852a-4156-bd7a-3d31f2585cc0"
 migrations_dir = "../../packages/db/migrations"
 
 [[kv_namespaces]]
 binding = "KV"
-id = "REPLACE_WITH_KV_ID"
+id = "1e06366b25ae4199bad36705e2a11953"
 
 [[r2_buckets]]
 binding = "R2"
 bucket_name = "ai-job-agent-files"
 
-[[queues.producers]]
-binding = "QUEUE_INGESTION"
-queue = "ai-job-agent-ingestion"
+[[vectorize]]
+binding = "VECTORIZE_JOBS"
+index_name = "job-embeddings"
 
-[[queues.producers]]
-binding = "QUEUE_AGENT"
-queue = "ai-job-agent-agent"
+[[vectorize]]
+binding = "VECTORIZE_PROFILES"
+index_name = "profile-embeddings"
 
 [ai]
 binding = "AI"
 
 [vars]
 ENVIRONMENT = "development"
+AWS_REGION = "us-east-1"
+BEDROCK_MODEL_ID = "anthropic.claude-opus-4-5"
 
 # Secrets (set via: wrangler secret put JWT_SECRET)
 # JWT_SECRET
 # AWS_ACCESS_KEY_ID
 # AWS_SECRET_ACCESS_KEY
-# AWS_REGION

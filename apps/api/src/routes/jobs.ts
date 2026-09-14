@@ -41,7 +41,7 @@ jobsRouter.get('/', async (c) => {
       const results = await c.env.AI.run('@cf/baai/bge-base-en-v1.5', { text: [q] });
       void results;
       // Vectorize query — use namespace binding directly
-      const vectorResults = await (c.env as unknown as { VECTORIZE: VectorizeIndex }).VECTORIZE?.query(vector, {
+      const vectorResults = await c.env.VECTORIZE_JOBS?.query(vector, {
         topK: 50,
         returnMetadata: 'all',
       });

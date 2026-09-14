@@ -1,6 +1,6 @@
 export interface IngestionEnv {
   DB: D1Database;
   AI: Ai;
-  QUEUE_INGESTION: Queue;
+  VECTORIZE_JOBS: VectorizeIndex;
   ENVIRONMENT: string;
 }

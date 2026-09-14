@@ -6,20 +6,14 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "ai-job-agent-db"
-database_id = "REPLACE_WITH_D1_ID"
+database_id = "7781002f-852a-4156-bd7a-3d31f2585cc0"
+
+[[vectorize]]
+binding = "VECTORIZE_JOBS"
+index_name = "job-embeddings"
 
 [ai]
 binding = "AI"
-
-[[queues.consumers]]
-queue = "ai-job-agent-ingestion"
-max_batch_size = 10
-max_batch_timeout = 30
-max_retries = 3
-
-[[queues.producers]]
-binding = "QUEUE_INGESTION"
-queue = "ai-job-agent-ingestion"
 
 [triggers]
 crons = ["0 6 * * *"]
