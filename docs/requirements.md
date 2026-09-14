@@ -69,16 +69,19 @@ AI Job Agent is an AI-native job discovery and application-assistance platform t
 - Job ingestion must be idempotent.
 - Agent workflows must tolerate retries and partial failures.
 - External provider failures must not corrupt application state.
+- On the Cloudflare free tier, Queues messages expire after 24 hours; ingestion and agent workflows must be designed to complete or checkpoint within that window.
 
 ### Observability
 - Structured logs.
 - Metrics for ingestion, matching, agent execution, failures, and latency.
 - Traceable agent runs with inputs, outputs, tool calls, and status where appropriate.
+- On the free tier, Workers Logs retention is 3 days; export or forward important events before they expire.
 
 ### Performance
 - Fast interactive search and filtering.
 - Asynchronous processing for expensive ingestion and AI workflows.
 - Horizontally scalable stateless application services.
+- Workers AI is limited to 10,000 Neurons/day on the free tier; AI-heavy workflows (resume extraction, bulk job matching) must batch carefully and avoid redundant model calls.
 
 ## 5. Agent Safety and Control
 
@@ -99,6 +102,22 @@ AI Job Agent is an AI-native job discovery and application-assistance platform t
 7. AI-assisted job analysis and application preparation.
 8. Basic agent execution and audit trail.
 
+### MVP Free-Tier Constraints
+
+The MVP targets the Cloudflare free tier. The following constraints apply and must be respected in design and implementation:
+
+| Service | Free Limit | Impact |
+|---|---|---|
+| Workers | 100,000 requests/day, 10 ms CPU/invocation | API handlers must be fast; offload heavy work to background queues |
+| D1 | 5 GB storage, 5 M rows read/day, 100,000 rows written/day | Design schemas to minimize row reads; avoid N+1 queries |
+| KV | 100,000 reads/day, 1,000 writes/day, 1 GB storage | Use KV for caching and config only; do not use as primary store |
+| R2 | 10 GB storage/month, free egress | Resume and document storage is within free limits at MVP scale |
+| Queues | 10,000 operations/day, 24-hour message retention | Queue volume must stay below 10,000/day; jobs must complete within 24 hours |
+| Workers AI | 10,000 Neurons/day | Limit AI calls per user action; cache AI results where possible |
+| Containers | Not available on free tier | Go services must run as Workers (WASM) or on an external free-tier platform |
+
+**PostgreSQL:** Not provided by Cloudflare. If required beyond D1 capabilities, use an external provider with a free tier (e.g., Neon, Supabase). Direct connections from Workers require the Workers Paid plan (via Hyperdrive) or a TCP proxy.
+
 ## 7. Future Scope
 
 - Additional job providers.
@@ -108,3 +127,4 @@ AI Job Agent is an AI-native job discovery and application-assistance platform t
 - Application analytics.
 - Advanced recommendation models.
 - Human-in-the-loop application automation with explicit approvals.
+- Upgrade to Workers Paid plan to unlock Containers, longer Queue retention, and higher AI/compute quotas.
