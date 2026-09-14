@@ -36,7 +36,7 @@ export function Jobs() {
       if (remote) params.remote = remote;
       if (type) params.employment_type = type;
       const res = await api.jobs.list(params);
-      setJobs(res.jobs as Job[]);
+      setJobs(res.jobs as unknown as Job[]);
       setTotal(res.total);
       setOffset(newOffset);
     } finally {

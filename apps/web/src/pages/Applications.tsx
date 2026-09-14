@@ -92,24 +92,24 @@ export function Applications() {
                   {STATUSES.map(s => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
                 </select>
               </div>
-              {app.notes && <p className="text-sm text-gray-500 mt-2">{String(app.notes)}</p>}
+              {!!app.notes && <p className="text-sm text-gray-500 mt-2">{String(app.notes)}</p>}
               <button
                 onClick={() => showTimeline(app.id as string)}
                 className="text-xs text-blue-600 hover:underline mt-2"
               >
-                {timeline?.appId === app.id ? 'Hide timeline' : 'Show timeline'}
+                {timeline !== null && timeline.appId === app.id ? 'Hide timeline' : 'Show timeline'}
               </button>
 
-              {timeline?.appId === app.id && (
+              {timeline !== null && timeline.appId === app.id && (
                 <div className="mt-3 border-t border-gray-100 pt-3 space-y-1">
                   {(timeline.events as Array<Record<string, unknown>>).map(ev => (
                     <div key={ev.id as string} className="text-xs text-gray-500 flex gap-2">
                       <span>{new Date(ev.occurred_at as number).toLocaleDateString()}</span>
                       <span className="capitalize">{String(ev.event_type).replace('_', ' ')}</span>
-                      {ev.event_type === 'note' && ev.payload && (
+                      {ev.event_type === 'note' && !!ev.payload && (
                         <span>{(ev.payload as { text?: string }).text}</span>
                       )}
-                      {ev.event_type === 'status_change' && ev.payload && (
+                      {ev.event_type === 'status_change' && !!ev.payload && (
                         <span>
                           {(ev.payload as { from?: string; to?: string }).from} → {(ev.payload as { from?: string; to?: string }).to}
                         </span>

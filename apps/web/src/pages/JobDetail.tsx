@@ -93,9 +93,9 @@ export function JobDetail() {
             <h1 className="text-xl font-semibold text-gray-900">{String(job.title)}</h1>
             <div className="text-gray-600 mt-1">{String(job.company)}</div>
             <div className="flex gap-2 mt-2 flex-wrap text-sm text-gray-500">
-              {job.location && <span>{String(job.location)}</span>}
-              {job.remote && <span className="capitalize">{String(job.remote)}</span>}
-              {job.employment_type && <span>{String(job.employment_type).replace('_', ' ')}</span>}
+              {!!job.location && <span>{String(job.location)}</span>}
+              {!!job.remote && <span className="capitalize">{String(job.remote)}</span>}
+              {!!job.employment_type && <span>{String(job.employment_type).replace('_', ' ')}</span>}
             </div>
           </div>
           <button
@@ -117,7 +117,7 @@ export function JobDetail() {
           </div>
         )}
 
-        {job.description && (
+        {!!job.description && (
           <div className="mt-4">
             <div className="text-sm font-medium text-gray-700 mb-2">Description</div>
             <div className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
@@ -126,7 +126,7 @@ export function JobDetail() {
           </div>
         )}
 
-        {job.source_url && (
+        {!!job.source_url && (
           <a
             href={String(job.source_url)}
             target="_blank"

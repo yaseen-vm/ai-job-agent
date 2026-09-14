@@ -103,7 +103,7 @@ export function Profile() {
           >
             {uploading ? 'Uploading…' : 'Upload PDF or DOCX'}
           </button>
-          {profile.resume_r2_key && <span className="text-sm text-green-600">Resume on file</span>}
+          {!!profile.resume_r2_key && <span className="text-sm text-green-600">Resume on file</span>}
         </div>
         {uploadStatus && <p className="text-sm text-gray-500 mt-2">{uploadStatus}</p>}
         <input ref={fileRef} type="file" accept=".pdf,.docx" className="hidden" onChange={handleResumeUpload} />
