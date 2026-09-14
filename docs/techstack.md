@@ -6,10 +6,9 @@ Cloud-native, API-first, event-driven architecture running entirely on the Cloud
 
 ## Frontend
 
-- **Next.js / React** — web application and user experience.
-- **TypeScript** — frontend type safety.
+- **React + TypeScript + Vite** — single-page application; outputs pure static files with no SSR runtime.
 - **Tailwind CSS** — UI styling.
-- **Cloudflare Pages** — frontend deployment and global delivery.
+- **Cloudflare Pages** — frontend deployment and global delivery; serves the Vite `dist/` output directly with no adapter required.
   - Free tier: 500 builds/month, 1 concurrent build, 20,000 files/project, 100 projects/account.
 
 ## Backend
@@ -24,7 +23,7 @@ Cloud-native, API-first, event-driven architecture running entirely on the Cloud
 | Service | Role | Free Tier Limit |
 |---|---|---|
 | **Workers** | API handlers, background consumers, agent execution | 100,000 requests/day, 10 ms CPU/invocation |
-| **Pages** | Frontend hosting and delivery | 500 builds/month, 20,000 files/project |
+| **Pages** | Frontend hosting (React + Vite static SPA) | 500 builds/month, 20,000 files/project |
 | **D1** | Primary relational database (SQLite-compatible) | 5 GB storage, 5 M rows read/day, 100,000 rows written/day |
 | **KV** | Cache, configuration, short-lived lookup state | 100,000 reads/day, 1,000 writes/day, 1 GB storage |
 | **R2** | Resume and document object storage | 10 GB storage/month, free egress, 1 M Class A ops/month, 10 M Class B ops/month |
