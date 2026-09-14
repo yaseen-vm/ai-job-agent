@@ -13,10 +13,12 @@ Cloud-native, API-first, event-driven architecture running entirely on the Cloud
 
 ## Backend
 
-- **Go** — primary backend language, compiled to WebAssembly and deployed as Cloudflare Workers.
-  - No Containers; all Go backend logic runs inside the Workers runtime via WASM.
-- **REST API** — primary client-facing API contract, served from Workers.
-- **Background processing** — asynchronous ingestion, normalization, matching, and agent workflows via Cloudflare Queues and Worker consumers.
+- **TypeScript + Hono** — backend language and web framework, running natively on the Cloudflare Workers V8 runtime.
+  - Hono is purpose-built for Cloudflare Workers: typed routing, middleware, and first-class binding helpers for D1, KV, R2, and Queues.
+  - Native V8 execution — no WASM layer, no bundle size issues, minimal cold-start overhead.
+  - Shared TypeScript types between frontend and backend via a monorepo workspace.
+- **REST API** — primary client-facing API contract, served from a Hono Worker.
+- **Background processing** — asynchronous ingestion, normalization, matching, and agent workflows via Cloudflare Queues and separate Worker consumers written in TypeScript.
 
 ## Cloudflare Services (Free Tier)
 

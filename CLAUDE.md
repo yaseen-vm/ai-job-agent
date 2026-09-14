@@ -13,11 +13,11 @@ See `docs/requirements.md` for full functional requirements and MVP scope. See `
 Cloud-native, API-first, event-driven system with a separately deployable frontend and backend.
 
 - **Frontend**: React + TypeScript + Vite (pure SPA, static output), Tailwind CSS, deployed on Cloudflare Pages
-- **Backend**: Go — REST API, background workers, orchestration
-- **Cloud**: Cloudflare Workers, Pages, R2, KV, D1, Queues, Containers
-- **Primary DB**: PostgreSQL (preferred) or Cloudflare D1 — decision deferred to implementation
-- **AI layer**: Model-agnostic LLM integration, bounded agents via tool calling, RAG + embeddings, MCP for agent capabilities
-- **CI/CD**: GitHub Actions; Docker for Go service containers; Terraform for infrastructure
+- **Backend**: TypeScript + Hono, running natively on Cloudflare Workers (V8 — no WASM, no containers)
+- **Cloud**: Cloudflare Workers, Pages, D1, KV, R2, Queues, Workers AI, Vectorize — free tier only
+- **Primary DB**: Cloudflare D1 (SQLite-compatible)
+- **AI layer**: Workers AI (inference + embeddings), Vectorize (vector search), provider-agnostic model integration, bounded agents via tool calling, RAG
+- **CI/CD**: GitHub Actions + Wrangler; Terraform/Pulumi for infrastructure
 
 ## Key Architectural Constraints
 

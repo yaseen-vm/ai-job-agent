@@ -4,7 +4,7 @@
 
 AI Job Agent is an AI-native job discovery and application-assistance platform that helps candidates discover relevant jobs, evaluate fit, organize opportunities, and assist with application workflows while keeping the candidate in control of final submissions.
 
-The frontend is a React + TypeScript + Vite SPA deployed on Cloudflare Pages. The system runs entirely on the Cloudflare free tier using Workers, Pages, D1, KV, R2, Queues, Workers AI, and Vectorize.
+The frontend is a React + TypeScript + Vite SPA deployed on Cloudflare Pages. The backend is TypeScript + Hono running natively on Cloudflare Workers. The system runs entirely on the Cloudflare free tier using Workers, Pages, D1, KV, R2, Queues, Workers AI, and Vectorize.
 
 ## 2. Goals
 
