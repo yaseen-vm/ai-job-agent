@@ -34,7 +34,9 @@ Cloud-native, API-first, event-driven architecture running entirely on the Cloud
 | **Vectorize** | Vector embeddings for semantic job-candidate matching | Included in Workers free plan |
 | **Workers Logs** | Structured logging and observability | 200,000 events/day, 3-day retention |
 
-**Services not used:** Containers (paid only), Hyperdrive (paid only), PostgreSQL (requires external hosting — not Cloudflare).
+**External services used:** Amazon Bedrock (Claude Opus) for primary LLM inference — the only non-Cloudflare dependency. All other services are Cloudflare free tier.
+
+**Services not used:** Containers (paid only), Hyperdrive (paid only), PostgreSQL (requires external hosting).
 
 ## Data Layer
 
@@ -45,14 +47,19 @@ Cloud-native, API-first, event-driven architecture running entirely on the Cloud
 
 ## AI / Agent Layer
 
-- **Workers AI** — model inference at the edge: LLM calls, embeddings, and classification.
-  - Free tier: 10,000 Neurons/day. All AI workflows must cache results in D1/KV and avoid redundant calls.
-- **Vectorize** — stores and queries embeddings for RAG and semantic matching.
+- **Amazon Bedrock — Claude Opus** — primary LLM for complex reasoning: job extraction, candidate-job fit analysis, application content drafting, and agent orchestration.
+  - Accessed from Workers via the Bedrock REST API (`bedrock-runtime.{region}.amazonaws.com`).
+  - Requests signed with AWS Signature V4 using `aws4fetch` (lightweight, Worker-compatible signing library).
+  - AWS credentials (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`) stored as Cloudflare Workers Secrets — never in source control or client code.
+  - Using Bedrock bypasses the Workers AI 10,000 Neurons/day limit for LLM calls.
+- **Workers AI** — lightweight inference only: generating embeddings and fast classification tasks where Bedrock would be over-engineered.
+  - Free tier: 10,000 Neurons/day (reserved for embeddings; LLM calls go to Bedrock).
+- **Vectorize** — stores and queries embeddings for semantic job-candidate matching and RAG retrieval.
 - **AI agents** — bounded agents for job discovery, extraction, matching, research, and application preparation. Each agent operates through explicit, permissioned tools.
 - **RAG** — retrieval-augmented generation grounded in candidate data and job information stored in D1/Vectorize.
-- **Tool calling** — agents interact with explicit tools (D1 reads, R2 uploads, Queue pushes) rather than directly accessing infrastructure.
+- **Tool calling** — agents interact with explicit tools (D1 reads, R2 uploads, Queue pushes, Bedrock calls) rather than directly accessing infrastructure.
 - **MCP** — standardized tool/context integration for agent capabilities where appropriate.
-- Model integration is provider-agnostic so the underlying model can be swapped without rewriting business logic.
+- Model integration is provider-agnostic: Bedrock is the default provider; the integration layer allows swapping models without rewriting business logic.
 
 ## Job Data Sources
 

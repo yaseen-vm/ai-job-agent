@@ -4,7 +4,7 @@
 
 AI Job Agent is an AI-native job discovery and application-assistance platform that helps candidates discover relevant jobs, evaluate fit, organize opportunities, and assist with application workflows while keeping the candidate in control of final submissions.
 
-The frontend is a React + TypeScript + Vite SPA deployed on Cloudflare Pages. The backend is TypeScript + Hono running natively on Cloudflare Workers. The system runs entirely on the Cloudflare free tier using Workers, Pages, D1, KV, R2, Queues, Workers AI, and Vectorize.
+The frontend is a React + TypeScript + Vite SPA deployed on Cloudflare Pages. The backend is TypeScript + Hono running natively on Cloudflare Workers. The system runs on the Cloudflare free tier (Workers, Pages, D1, KV, R2, Queues, Workers AI, Vectorize) with Amazon Bedrock (Claude Opus) as the primary LLM provider.
 
 ## 2. Goals
 
@@ -38,13 +38,13 @@ The frontend is a React + TypeScript + Vite SPA deployed on Cloudflare Pages. Th
 
 ### AI Agent Workflow
 - Research and discover jobs via Worker-based adapters.
-- Extract and normalize job information using Workers AI.
-- Evaluate candidate-job fit using embeddings (Vectorize) and LLM reasoning (Workers AI).
+- Extract and normalize job information using Claude Opus via Amazon Bedrock.
+- Evaluate candidate-job fit using embeddings (Workers AI + Vectorize) and LLM reasoning (Bedrock Claude Opus).
 - Rank opportunities.
 - Generate application preparation suggestions.
 - Draft application content when requested.
 - Require explicit user approval before consequential external actions such as submitting an application.
-- Cache all AI results in D1 or KV to avoid redundant Neuron consumption within the 10,000 Neurons/day free-tier limit.
+- Cache all AI results in D1 or KV to avoid redundant LLM calls and Bedrock costs.
 
 ### Application Tracking
 - Track saved, preparing, applied, interviewing, offer, rejected, withdrawn, and other configurable states in D1.
