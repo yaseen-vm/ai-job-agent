@@ -21,5 +21,8 @@ max_retries = 3
 binding = "QUEUE_INGESTION"
 queue = "ai-job-agent-ingestion"
 
+[triggers]
+crons = ["0 6 * * *"]
+
 [vars]
 ENVIRONMENT = "development"
