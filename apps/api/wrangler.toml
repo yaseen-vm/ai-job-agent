@@ -31,7 +31,7 @@ binding = "AI"
 [vars]
 ENVIRONMENT = "development"
 AWS_REGION = "us-east-1"
-BEDROCK_MODEL_ID = "anthropic.claude-sonnet-4-6"
+BEDROCK_MODEL_ID = "us.anthropic.claude-sonnet-4-6"
 
 # Secrets (set via: wrangler secret put JWT_SECRET)
 # JWT_SECRET
