@@ -34,7 +34,11 @@ app.route('/agents', agentsRouter);
 app.get('/health', (c) => c.json({ status: 'ok' }));
 
 app.post('/admin/ingest', async (c) => {
-  c.executionCtx.waitUntil(triggerIngestion(c.env));
+  const body = await c.req.json<{ keyword?: string; clear?: boolean }>().catch(() => ({}));
+  if (body.clear) {
+    await c.env.DB.prepare('DELETE FROM jobs').run();
+  }
+  c.executionCtx.waitUntil(triggerIngestion(c.env, body.keyword));
   return c.json({ status: 'ingestion started' }, 202);
 });
 
@@ -44,14 +48,14 @@ app.onError((err, c) => {
   return c.json({ error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } }, 500);
 });
 
-async function triggerIngestion(env: Env) {
-  const categories = ['software-dev', 'devops-sysadmin', 'product'];
+async function triggerIngestion(env: Env, keyword?: string) {
+  const categories = keyword ? [undefined] : ['software-dev', 'devops-sysadmin', 'product'];
   let inserted = 0;
 
   for (const category of categories) {
     let rawJobs;
-    try { rawJobs = await fetchRemotiveJobs(category); }
-    catch (e) { console.error(`Remotive fetch failed for ${category}:`, e); continue; }
+    try { rawJobs = await fetchRemotiveJobs(category, keyword); }
+    catch (e) { console.error(`Remotive fetch failed:`, e); continue; }
 
     for (const raw of rawJobs) {
       try {

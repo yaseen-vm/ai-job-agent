@@ -15,10 +15,11 @@ export interface RemotiveJob {
   description: string;
 }
 
-export async function fetchRemotiveJobs(category?: string): Promise<RemotiveJob[]> {
+export async function fetchRemotiveJobs(category?: string, search?: string): Promise<RemotiveJob[]> {
   const url = new URL('https://remotive.com/api/remote-jobs');
   if (category) url.searchParams.set('category', category);
-  url.searchParams.set('limit', '50');
+  if (search) url.searchParams.set('search', search);
+  url.searchParams.set('limit', '100');
 
   const res = await fetch(url.toString(), {
     headers: { 'Accept': 'application/json', 'User-Agent': 'ai-job-agent/1.0' },

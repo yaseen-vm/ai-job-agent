@@ -28,6 +28,8 @@ export function Jobs() {
   const [type, setType] = useState('');
   const [ingesting, setIngesting] = useState(false);
   const [ingestMsg, setIngestMsg] = useState('');
+  const [ingestKeyword, setIngestKeyword] = useState('');
+  const [clearJobs, setClearJobs] = useState(true);
   const limit = 20;
 
   const fetchJobs = useCallback(async (newOffset = 0) => {
@@ -82,10 +84,14 @@ export function Jobs() {
   };
 
   const handleIngest = async () => {
+    if (!ingestKeyword.trim()) {
+      setIngestMsg('Enter a keyword first.');
+      return;
+    }
     setIngesting(true);
-    setIngestMsg('Fetching jobs from Remotive… this takes ~30s.');
+    setIngestMsg('Fetching jobs… this takes ~30s.');
     try {
-      await api.admin.ingest();
+      await api.admin.ingest(ingestKeyword.trim(), clearJobs);
       setTimeout(() => { fetchJobs(0); setIngestMsg('Done! Jobs updated.'); setIngesting(false); }, 35000);
     } catch {
       setIngestMsg('Ingestion failed.'); setIngesting(false);
@@ -118,20 +124,40 @@ export function Jobs() {
 
       {loading && <div className="text-gray-400 text-sm mb-4">Loading…</div>}
 
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-5">
+        <p className="text-sm font-medium text-gray-700 mb-3">Fetch jobs by keyword</p>
+        <div className="flex gap-2 flex-wrap items-center">
+          <input
+            type="text"
+            placeholder="e.g. React developer, Python backend…"
+            value={ingestKeyword}
+            onChange={e => setIngestKeyword(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && !ingesting && handleIngest()}
+            disabled={ingesting}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1 min-w-56 disabled:opacity-50"
+          />
+          <button
+            onClick={handleIngest}
+            disabled={ingesting}
+            className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors whitespace-nowrap"
+          >
+            {ingesting ? 'Fetching…' : 'Search & fetch'}
+          </button>
+          <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={clearJobs}
+              onChange={e => setClearJobs(e.target.checked)}
+              className="rounded"
+            />
+            Clear existing jobs first
+          </label>
+        </div>
+        {ingestMsg && <p className="text-sm text-gray-500 mt-2">{ingestMsg}</p>}
+      </div>
+
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm text-gray-500">{total} jobs found</span>
-        {total === 0 && (
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleIngest}
-              disabled={ingesting}
-              className="text-sm bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            >
-              {ingesting ? 'Fetching…' : 'Fetch jobs now'}
-            </button>
-            {ingestMsg && <span className="text-sm text-gray-500">{ingestMsg}</span>}
-          </div>
-        )}
       </div>
 
       <div className="space-y-2">

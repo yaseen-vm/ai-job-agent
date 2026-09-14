@@ -83,7 +83,11 @@ export const api = {
   },
 
   admin: {
-    ingest: () => request<{ status: string }>('/admin/ingest', { method: 'POST', body: '{}' }),
+    ingest: (keyword?: string, clear?: boolean) =>
+      request<{ status: string }>('/admin/ingest', {
+        method: 'POST',
+        body: JSON.stringify({ keyword, clear }),
+      }),
   },
 
   agents: {
