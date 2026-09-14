@@ -26,6 +26,8 @@ export function Jobs() {
   const [q, setQ] = useState('');
   const [remote, setRemote] = useState('');
   const [type, setType] = useState('');
+  const [ingesting, setIngesting] = useState(false);
+  const [ingestMsg, setIngestMsg] = useState('');
   const limit = 20;
 
   const fetchJobs = useCallback(async (newOffset = 0) => {
@@ -79,6 +81,17 @@ export function Jobs() {
     } catch {}
   };
 
+  const handleIngest = async () => {
+    setIngesting(true);
+    setIngestMsg('Fetching jobs from Remotive… this takes ~30s.');
+    try {
+      await api.admin.ingest();
+      setTimeout(() => { fetchJobs(0); setIngestMsg('Done! Jobs updated.'); setIngesting(false); }, 35000);
+    } catch {
+      setIngestMsg('Ingestion failed.'); setIngesting(false);
+    }
+  };
+
   return (
     <div>
       <div className="flex gap-3 mb-6 flex-wrap">
@@ -105,7 +118,21 @@ export function Jobs() {
 
       {loading && <div className="text-gray-400 text-sm mb-4">Loading…</div>}
 
-      <div className="text-sm text-gray-500 mb-3">{total} jobs found</div>
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm text-gray-500">{total} jobs found</span>
+        {total === 0 && (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleIngest}
+              disabled={ingesting}
+              className="text-sm bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              {ingesting ? 'Fetching…' : 'Fetch jobs now'}
+            </button>
+            {ingestMsg && <span className="text-sm text-gray-500">{ingestMsg}</span>}
+          </div>
+        )}
+      </div>
 
       <div className="space-y-2">
         {jobs.map(job => (

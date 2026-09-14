@@ -71,9 +71,21 @@ export function Profile() {
           const run = await api.agents.getRun(res.agent_run_id);
           if (run.status === 'completed') {
             clearInterval(interval);
-            setUploadStatus('Profile extracted from resume.');
+            setUploadStatus('Profile extracted from resume. Fields updated below.');
             const p = await api.profile.get();
             setProfile(p);
+            setForm({
+              full_name: String(p.full_name ?? ''),
+              headline: String(p.headline ?? ''),
+              summary: String(p.summary ?? ''),
+              years_experience: String(p.years_experience ?? ''),
+              remote_preference: String(p.remote_preference ?? ''),
+              min_salary: String(p.min_salary ?? ''),
+              skills: Array.isArray(p.skills) ? (p.skills as string[]).join(', ') : '',
+              preferred_roles: Array.isArray(p.preferred_roles) ? (p.preferred_roles as string[]).join(', ') : '',
+              preferred_locations: Array.isArray(p.preferred_locations) ? (p.preferred_locations as string[]).join(', ') : '',
+              employment_types: Array.isArray(p.employment_types) ? (p.employment_types as string[]).join(', ') : '',
+            });
           } else if (run.status === 'failed') {
             clearInterval(interval);
             setUploadStatus(`Extraction failed: ${run.error}`);

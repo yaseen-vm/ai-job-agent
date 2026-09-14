@@ -82,6 +82,10 @@ export const api = {
     timeline: (id: string) => request<{ events: Record<string, unknown>[] }>(`/applications/${id}/timeline`),
   },
 
+  admin: {
+    ingest: () => request<{ status: string }>('/admin/ingest', { method: 'POST', body: '{}' }),
+  },
+
   agents: {
     match: (jobId: string) =>
       request<{ agent_run_id: string }>('/agents/match', { method: 'POST', body: JSON.stringify({ job_id: jobId }) }),
