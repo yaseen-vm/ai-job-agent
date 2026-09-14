@@ -1,0 +1,38 @@
+name = "ai-job-agent-api"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ai-job-agent-db"
+database_id = "REPLACE_WITH_D1_ID"
+migrations_dir = "../../packages/db/migrations"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "REPLACE_WITH_KV_ID"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "ai-job-agent-files"
+
+[[queues.producers]]
+binding = "QUEUE_INGESTION"
+queue = "ai-job-agent-ingestion"
+
+[[queues.producers]]
+binding = "QUEUE_AGENT"
+queue = "ai-job-agent-agent"
+
+[ai]
+binding = "AI"
+
+[vars]
+ENVIRONMENT = "development"
+
+# Secrets (set via: wrangler secret put JWT_SECRET)
+# JWT_SECRET
+# AWS_ACCESS_KEY_ID
+# AWS_SECRET_ACCESS_KEY
+# AWS_REGION

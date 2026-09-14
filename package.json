@@ -1,0 +1,20 @@
+{
+  "name": "ai-job-agent",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev:api": "pnpm --filter @ai-job-agent/api dev",
+    "dev:web": "pnpm --filter @ai-job-agent/web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "db:migrate:local": "wrangler d1 migrations apply ai-job-agent-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply ai-job-agent-db --remote"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "wrangler": "^3.60.0"
+  }
+}
