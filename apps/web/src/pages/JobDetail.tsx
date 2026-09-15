@@ -47,7 +47,7 @@ export function JobDetail() {
 
   const requestDraft = async (type: 'cover_letter' | 'summary') => {
     if (!id) return;
-    setDraftContent('GENERATING...');
+    setDraftContent('Generating…');
     try {
       const res = await api.agents.draft(id, type);
       setDraftRunId(res.agent_run_id);
@@ -56,14 +56,14 @@ export function JobDetail() {
         if (run.status === 'completed') {
           clearInterval(interval);
           const output = run.output as { content?: string };
-          setDraftContent(output?.content ?? 'NO CONTENT GENERATED');
+          setDraftContent(output?.content ?? 'No content generated');
         } else if (run.status === 'failed') {
           clearInterval(interval);
-          setDraftContent('GENERATION FAILED.');
+          setDraftContent('Generation failed.');
         }
       }, 2000);
     } catch {
-      setDraftContent('REQUEST FAILED.');
+      setDraftContent('Request failed.');
     }
     void draftRunId;
   };
@@ -79,139 +79,123 @@ export function JobDetail() {
     }
   };
 
-  if (!job) return (
-    <div className="py-12 border-t border-line font-mono text-[10px] uppercase tracking-widest animate-pulse">
-      Loading Data...
-    </div>
-  );
+  if (!job) return <div className="text-gray-400">Loading…</div>;
 
   const skills = Array.isArray(job.required_skills) ? job.required_skills as string[] : [];
 
   return (
-    <div className="max-w-4xl space-y-12 pb-24">
-      <div className="border-b border-line pb-8">
-        <Link to="/jobs" className="font-mono text-[10px] uppercase tracking-widest text-gray-500 hover:text-ink transition-colors mb-8 block">
-          ← Back to List
-        </Link>
-        <div className="flex flex-col md:flex-row justify-between items-start gap-8">
+    <div className="max-w-3xl">
+      <Link to="/jobs" className="text-sm text-blue-600 hover:underline mb-4 block">← Back to jobs</Link>
+
+      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-4">
+        <div className="flex justify-between items-start gap-4">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500 mb-4">{String(job.company)}</p>
-            <h1 className="font-serif text-[clamp(40px,6vw,90px)] leading-[0.85] tracking-[-0.04em] m-0 mb-6">{String(job.title)}</h1>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[10px] uppercase tracking-widest text-gray-500">
-              {!!job.location && <span>/ {String(job.location)}</span>}
-              {!!job.remote && <span>/ {String(job.remote)}</span>}
-              {!!job.employment_type && <span>/ {String(job.employment_type).replace('_', ' ')}</span>}
+            <h1 className="text-xl font-semibold text-gray-900">{String(job.title)}</h1>
+            <div className="text-gray-600 mt-1">{String(job.company)}</div>
+            <div className="flex gap-2 mt-2 flex-wrap text-sm text-gray-500">
+              {!!job.location && <span>{String(job.location)}</span>}
+              {!!job.remote && <span className="capitalize">{String(job.remote)}</span>}
+              {!!job.employment_type && <span>{String(job.employment_type).replace('_', ' ')}</span>}
             </div>
           </div>
           <button
             onClick={toggleSave}
-            className={`font-mono text-[10px] uppercase tracking-widest border border-line px-4 py-2 transition-colors ${saved ? 'bg-ink text-paper border-ink' : 'hover:bg-acid hover:text-ink hover:border-acid'}`}
+            className={`text-2xl transition-colors ${saved ? 'text-yellow-500' : 'text-gray-300 hover:text-yellow-400'}`}
           >
-            {saved ? '[ SAVED ]' : '[ SAVE ]'}
+            ★
           </button>
         </div>
+
+        {skills.length > 0 && (
+          <div className="mt-4">
+            <div className="text-sm font-medium text-gray-700 mb-2">Required skills</div>
+            <div className="flex flex-wrap gap-1">
+              {skills.map(s => (
+                <span key={s} className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded">{s}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!!job.description && (
+          <div className="mt-4">
+            <div className="text-sm font-medium text-gray-700 mb-2">Description</div>
+            <div className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
+              {String(job.description).slice(0, 3000)}
+            </div>
+          </div>
+        )}
+
+        {!!job.source_url && (
+          <a
+            href={String(job.source_url)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block mt-4 text-sm text-blue-600 hover:underline"
+          >
+            View original posting →
+          </a>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="md:col-span-2 space-y-12">
-          {!!job.description && (
-            <div>
-              <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500 mb-6">Description</p>
-              <div className="font-sans text-sm leading-relaxed text-gray-800 whitespace-pre-wrap columns-1 lg:columns-2 gap-8">
-                {String(job.description).slice(0, 3000)}
-              </div>
-            </div>
+      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-4">
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="font-medium text-gray-900">Match score</h2>
+          {!match && !matchLoading && (
+            <button
+              onClick={requestMatch}
+              className="text-sm bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Compute match
+            </button>
           )}
-
-          {!!job.source_url && (
-            <div className="pt-8 border-t border-line">
-              <a
-                href={String(job.source_url)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-mono text-[10px] uppercase tracking-widest border-b border-ink pb-1 hover:text-acid hover:border-acid transition-colors"
-              >
-                View original posting ↗
-              </a>
-            </div>
-          )}
+          {matchLoading && <span className="text-sm text-gray-400">Computing…</span>}
         </div>
 
-        <div className="space-y-12 border-t md:border-t-0 md:border-l border-line pt-8 md:pt-0 md:pl-8">
+        {match && (
           <div>
-            <div className="flex justify-between items-center mb-6">
-              <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500">Match Score</p>
-              {!match && !matchLoading && (
-                <button
-                  onClick={requestMatch}
-                  className="font-mono text-[10px] uppercase tracking-widest text-ink hover:text-acid transition-colors underline"
-                >
-                  Compute
-                </button>
-              )}
-              {matchLoading && <span className="font-mono text-[10px] uppercase tracking-widest text-gray-400 animate-pulse">Computing...</span>}
+            <div className={`text-3xl font-bold ${scoreColor(match.score as number)}`}>
+              {Math.round((match.score as number) * 100)}%
             </div>
-
-            {match ? (
-              <div>
-                <div className="font-serif text-[clamp(40px,5vw,70px)] leading-[0.8] mb-4">
-                  {Math.round((match.score as number) * 100)}%
+            <p className="text-sm text-gray-600 mt-2">{String(match.explanation ?? '')}</p>
+            {Array.isArray(match.missing_skills) && match.missing_skills.length > 0 && (
+              <div className="mt-3">
+                <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Missing skills</div>
+                <div className="flex flex-wrap gap-1">
+                  {(match.missing_skills as string[]).map(s => (
+                    <span key={s} className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded">{s}</span>
+                  ))}
                 </div>
-                <p className="font-sans text-sm text-gray-600 leading-relaxed mb-6">
-                  {String(match.explanation ?? '')}
-                </p>
-                {Array.isArray(match.missing_skills) && match.missing_skills.length > 0 && (
-                  <div className="border-t border-line pt-4">
-                    <p className="font-mono text-[10px] uppercase tracking-widest text-red-500 mb-3">Missing Skills</p>
-                    <div className="flex flex-wrap gap-2">
-                      {(match.missing_skills as string[]).map(s => (
-                        <span key={s} className="font-mono text-[10px] uppercase tracking-widest border border-red-200 text-red-500 px-2 py-1">{s}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
-            ) : (
-              <div className="font-serif text-3xl italic text-gray-300">--%</div>
             )}
           </div>
+        )}
+      </div>
 
-          <div className="border-t border-line pt-8">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500 mb-6">Required Skills</p>
-            {skills.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {skills.map(s => (
-                  <span key={s} className="font-mono text-[10px] uppercase tracking-widest border border-line px-2 py-1">{s}</span>
-                ))}
-              </div>
-            ) : (
-              <p className="font-mono text-[10px] uppercase tracking-widest text-gray-400">None specified.</p>
-            )}
-          </div>
-
-          <div className="border-t border-line pt-8">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500 mb-6">Agent Actions</p>
-            <div className="flex flex-col gap-3">
-              <button onClick={() => requestDraft('cover_letter')} className="font-mono text-[10px] uppercase tracking-widest text-left border border-line px-4 py-3 hover:bg-ink hover:text-paper transition-colors">
-                Draft Cover Letter
-              </button>
-              <button onClick={() => requestDraft('summary')} className="font-mono text-[10px] uppercase tracking-widest text-left border border-line px-4 py-3 hover:bg-ink hover:text-paper transition-colors">
-                Draft Summary
-              </button>
-            </div>
-            {draftContent && (
-              <div className="mt-6 border border-line p-4">
-                <p className="font-mono text-[10px] uppercase tracking-widest text-acid bg-ink px-2 inline-block mb-4">Draft Output</p>
-                <textarea
-                  readOnly
-                  value={draftContent}
-                  className="w-full h-48 bg-transparent text-sm font-sans text-ink resize-y focus:outline-none"
-                />
-              </div>
-            )}
-          </div>
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 className="font-medium text-gray-900 mb-3">Application draft</h2>
+        <div className="flex gap-2 mb-3">
+          <button onClick={() => requestDraft('cover_letter')} className="text-sm bg-gray-100 hover:bg-gray-200 px-4 py-1.5 rounded-lg transition-colors">
+            Cover letter
+          </button>
+          <button onClick={() => requestDraft('summary')} className="text-sm bg-gray-100 hover:bg-gray-200 px-4 py-1.5 rounded-lg transition-colors">
+            Profile summary
+          </button>
         </div>
+        {draftContent && (
+          <textarea
+            readOnly
+            value={draftContent}
+            className="w-full h-48 border border-gray-200 rounded-lg p-3 text-sm text-gray-700 resize-none focus:outline-none"
+          />
+        )}
       </div>
     </div>
   );
+}
+
+function scoreColor(score: number) {
+  if (score >= 0.75) return 'text-green-600';
+  if (score >= 0.5) return 'text-yellow-600';
+  return 'text-gray-500';
 }

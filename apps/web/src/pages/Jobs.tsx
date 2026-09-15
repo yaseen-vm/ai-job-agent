@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../api/client.ts';
 import { JobCard } from '../components/JobCard.tsx';
-import { Database } from 'lucide-react';
+import { Search, MapPin, Filter, Database, Briefcase, Bookmark, Zap } from 'lucide-react';
 
 interface Job {
   id: string;
@@ -22,7 +22,7 @@ export function Jobs() {
   const [loading, setLoading] = useState(false);
   const [offset, setOffset] = useState(0);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
-  const [savedMap, setSavedMap] = useState<Map<string, string>>(new Map());
+  const [savedMap, setSavedMap] = useState<Map<string, string>>(new Map()); // job_id -> saved_job id
 
   const [q, setQ] = useState('');
   const [location, setLocation] = useState('');
@@ -124,105 +124,132 @@ export function Jobs() {
   };
 
   return (
-    <div className="space-y-16">
-      <div className="border-b border-line pb-8">
-        <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500 mb-6">Metrics / Dashboard</p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div>
-            <span className="block font-serif text-[clamp(60px,8vw,120px)] leading-[0.8] tracking-tight">{total}</span>
-            <span className="font-mono text-[10px] uppercase tracking-widest mt-4 block border-t border-line pt-2">Total Opportunities</span>
+    <div className="space-y-8">
+      {/* Dashboard Stats Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="bg-white/60 backdrop-blur-sm rounded-[2rem] p-6 border border-white/50 flex flex-col items-center justify-center">
+          <div className="flex items-center gap-2 mb-2">
+            <Briefcase className="text-blue-500" size={24} />
+            <span className="text-4xl font-light text-gray-900">{total}</span>
           </div>
-          <div>
-            <span className="block font-serif text-[clamp(60px,8vw,120px)] leading-[0.8] tracking-tight">{savedIds.size}</span>
-            <span className="font-mono text-[10px] uppercase tracking-widest mt-4 block border-t border-line pt-2">Saved Jobs</span>
+          <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Jobs Found</span>
+        </div>
+        <div className="bg-white/60 backdrop-blur-sm rounded-[2rem] p-6 border border-white/50 flex flex-col items-center justify-center">
+          <div className="flex items-center gap-2 mb-2">
+            <Bookmark className="text-yellow-500" size={24} />
+            <span className="text-4xl font-light text-gray-900">{savedIds.size}</span>
           </div>
-          <div>
-            <span className="block font-serif text-[clamp(60px,8vw,120px)] leading-[0.8] tracking-tight">{matchScores.size}</span>
-            <span className="font-mono text-[10px] uppercase tracking-widest mt-4 block border-t border-line pt-2">Matches Processed</span>
+          <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Saved Jobs</span>
+        </div>
+        <div className="bg-white/60 backdrop-blur-sm rounded-[2rem] p-6 border border-white/50 flex flex-col items-center justify-center">
+          <div className="flex items-center gap-2 mb-2">
+            <Zap className="text-purple-500" size={24} />
+            <span className="text-4xl font-light text-gray-900">{matchScores.size}</span>
           </div>
+          <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Matches Computed</span>
         </div>
       </div>
 
-      <div className="space-y-8">
-        <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500">Query / Filter</p>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 border-b border-line pb-8">
-          <input
-            type="search"
-            placeholder="Search keywords..."
-            value={q}
-            onChange={e => setQ(e.target.value)}
-            className="bg-transparent border border-line px-4 py-3 font-sans text-sm focus:outline-none focus:border-ink placeholder:text-gray-400"
-          />
-          <input
-            type="search"
-            placeholder="Location..."
-            value={location}
-            onChange={e => setLocation(e.target.value)}
-            className="bg-transparent border border-line px-4 py-3 font-sans text-sm focus:outline-none focus:border-ink placeholder:text-gray-400"
-          />
-          <select 
-            value={remote} 
-            onChange={e => setRemote(e.target.value)} 
-            className="bg-transparent border border-line px-4 py-3 font-sans text-sm appearance-none focus:outline-none focus:border-ink"
-          >
-            <option value="">All work types</option>
-            <option value="remote">Remote</option>
-            <option value="hybrid">Hybrid</option>
-            <option value="onsite">Onsite</option>
-          </select>
-          <select 
-            value={type} 
-            onChange={e => setType(e.target.value)} 
-            className="bg-transparent border border-line px-4 py-3 font-sans text-sm appearance-none focus:outline-none focus:border-ink"
-          >
-            <option value="">All job types</option>
-            <option value="full_time">Full time</option>
-            <option value="contract">Contract</option>
-            <option value="part_time">Part time</option>
-          </select>
+      <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 shadow-sm border border-white/50 space-y-6">
+        {/* Filter row */}
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="search"
+              placeholder="Search jobs..."
+              value={q}
+              onChange={e => setQ(e.target.value)}
+              className="w-full bg-white border-none rounded-full pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2c2d30]/20 shadow-inner"
+            />
+          </div>
+          <div className="relative flex-1">
+            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="search"
+              placeholder="Location..."
+              value={location}
+              onChange={e => setLocation(e.target.value)}
+              className="w-full bg-white border-none rounded-full pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2c2d30]/20 shadow-inner"
+            />
+          </div>
+          <div className="flex-1 flex gap-4">
+            <div className="relative flex-1">
+              <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <select 
+                value={remote} 
+                onChange={e => setRemote(e.target.value)} 
+                className="w-full bg-white border-none rounded-full pl-12 pr-4 py-3 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-[#2c2d30]/20 shadow-inner"
+              >
+                <option value="">All work types</option>
+                <option value="remote">Remote</option>
+                <option value="hybrid">Hybrid</option>
+                <option value="onsite">Onsite</option>
+              </select>
+            </div>
+            <div className="relative flex-1">
+              <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <select 
+                value={type} 
+                onChange={e => setType(e.target.value)} 
+                className="w-full bg-white border-none rounded-full pl-12 pr-4 py-3 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-[#2c2d30]/20 shadow-inner"
+              >
+                <option value="">All job types</option>
+                <option value="full_time">Full time</option>
+                <option value="contract">Contract</option>
+                <option value="part_time">Part time</option>
+              </select>
+            </div>
+          </div>
         </div>
 
+        <div className="border-t border-gray-200/60" />
+
+        {/* Fetch by keyword row */}
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500 mb-4">Ingestion Engine</p>
-          <div className="flex flex-col sm:flex-row gap-4 items-center">
-            <input
-              type="text"
-              placeholder="e.g. Python backend (comma = multiple)"
-              value={ingestKeyword}
-              onChange={e => setIngestKeyword(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && !ingesting && handleIngest()}
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Fetch new jobs from remote sources</p>
+          <div className="flex flex-col sm:flex-row gap-3 items-center">
+            <div className="relative flex-1 w-full">
+              <Database className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <input
+                type="text"
+                placeholder="e.g. Python backend (comma = multiple)"
+                value={ingestKeyword}
+                onChange={e => setIngestKeyword(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && !ingesting && handleIngest()}
+                disabled={ingesting}
+                className="w-full bg-white border-none rounded-full pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2c2d30]/20 disabled:opacity-50 shadow-inner"
+              />
+            </div>
+            <button
+              onClick={handleIngest}
               disabled={ingesting}
-              className="flex-1 bg-transparent border border-line px-4 py-3 font-sans text-sm focus:outline-none focus:border-ink placeholder:text-gray-400 disabled:opacity-50"
-            />
-            <label className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest cursor-pointer whitespace-nowrap">
+              className="w-full sm:w-auto text-sm font-medium bg-[#2c2d30] text-white px-6 py-3 rounded-full hover:bg-black disabled:opacity-50 transition-all shadow-md flex items-center justify-center gap-2"
+            >
+              <Database size={16} />
+              {ingesting ? 'Fetching...' : 'Search & fetch'}
+            </button>
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-600 cursor-pointer ml-2">
               <input
                 type="checkbox"
                 checked={clearJobs}
                 onChange={e => setClearJobs(e.target.checked)}
-                className="accent-ink w-3 h-3"
+                className="rounded text-[#2c2d30] focus:ring-[#2c2d30] border-gray-300 w-4 h-4"
               />
-              Wipe Old
+              Clear existing
             </label>
-            <button
-              onClick={handleIngest}
-              disabled={ingesting}
-              className="w-full sm:w-auto font-mono text-[10px] uppercase tracking-widest bg-ink text-paper px-6 py-3 hover:bg-acid hover:text-ink transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              <Database size={14} />
-              {ingesting ? 'Fetching...' : 'Ingest'}
-            </button>
           </div>
-          {ingestMsg && <p className="font-mono text-[10px] uppercase tracking-widest text-acid bg-ink inline-block px-2 mt-4">{ingestMsg}</p>}
+          {ingestMsg && <p className="text-sm font-medium text-blue-600 mt-3">{ingestMsg}</p>}
         </div>
       </div>
 
       {loading && (
-        <div className="py-12 border-t border-line font-mono text-[10px] uppercase tracking-widest animate-pulse">
-          Loading Data...
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-line border border-line">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {jobs.map(job => (
           <JobCard
             key={job.id}
@@ -238,30 +265,31 @@ export function Jobs() {
       </div>
 
       {jobs.length === 0 && !loading && (
-        <div className="py-24 border border-line flex flex-col items-center justify-center">
-          <p className="font-serif text-4xl mb-4 italic">Empty state.</p>
-          <p className="font-mono text-[10px] uppercase tracking-widest">No listings available. Ingest data to begin.</p>
+        <div className="bg-white/50 backdrop-blur-sm rounded-[2rem] border border-white/50 py-16 flex flex-col items-center justify-center text-gray-400">
+          <Search size={48} className="mb-4 text-gray-300" />
+          <p className="text-lg font-medium text-gray-500">No jobs found</p>
+          <p className="text-sm">Try adjusting your filters or fetch new jobs.</p>
         </div>
       )}
 
       {total > limit && (
-        <div className="flex justify-between items-center py-4 border-t border-line font-mono text-[10px] uppercase tracking-widest">
+        <div className="flex justify-between items-center mt-8 bg-white/60 backdrop-blur-sm rounded-full px-6 py-3 border border-white/50">
           <button
             onClick={() => fetchJobs(Math.max(0, offset - limit))}
             disabled={offset === 0}
-            className="hover:text-acid disabled:opacity-50 transition-colors"
+            className="text-sm font-medium bg-white px-4 py-2 rounded-full hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition-colors shadow-sm"
           >
-            ← Prev
+            Previous
           </button>
-          <span>
-            {offset + 1} / {Math.min(offset + limit, total)} of {total}
+          <span className="text-sm font-semibold text-gray-600">
+            {offset + 1} - {Math.min(offset + limit, total)} of {total}
           </span>
           <button
             onClick={() => fetchJobs(offset + limit)}
             disabled={offset + limit >= total}
-            className="hover:text-acid disabled:opacity-50 transition-colors"
+            className="text-sm font-medium bg-white px-4 py-2 rounded-full hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition-colors shadow-sm"
           >
-            Next →
+            Next
           </button>
         </div>
       )}
