@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../api/client.ts';
 import { JobCard } from '../components/JobCard.tsx';
 import { useSubscription } from '../hooks/useSubscription.ts';
-import { Search, MapPin, Filter, Database, Briefcase, Bookmark, Zap, Crown, Sparkles, Lock, CheckCircle, AlertCircle } from 'lucide-react';
+import { useAuthStore } from '../stores/auth.ts';
+import { Search, MapPin, Filter, Database, Briefcase, Bookmark, Zap, Crown, Sparkles, Lock, CheckCircle, AlertCircle, UserCircle } from 'lucide-react';
 
 interface Job {
   id: string;
@@ -39,6 +40,17 @@ export function Jobs() {
   const limit = 20;
 
   const { isPremium, subscription } = useSubscription();
+  const { isAdmin } = useAuthStore();
+  const [profileRoles, setProfileRoles] = useState<string[]>([]);
+
+  useEffect(() => {
+    api.profile.get()
+      .then(p => {
+        const roles = Array.isArray(p.preferred_roles) ? p.preferred_roles as string[] : [];
+        setProfileRoles(roles);
+      })
+      .catch(() => {});
+  }, []);
 
   // Premium instant search state
   const [searchState, setSearchState] = useState<'idle' | 'starting' | 'running' | 'done' | 'error'>('idle');
@@ -204,69 +216,95 @@ export function Jobs() {
         </div>
       </div>
 
-      {/* Premium banner */}
+      {/* Premium panel */}
       {isPremium && subscription && (
-        <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-[2rem] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-amber-100 text-amber-600">
-              <Crown size={20} />
-            </div>
-            <div>
-              <p className="font-semibold text-amber-900 text-sm">Premium Active</p>
-              <p className="text-xs text-amber-700 mt-0.5">
-                Your profile is searched on Indeed daily via Apify.
-                {subscription.expires_at && ` Renews ${new Date(subscription.expires_at).toLocaleDateString()}.`}
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            {searchState === 'idle' && (
-              <button
-                onClick={handlePremiumSearch}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 transition-colors shadow-sm"
-              >
-                <Sparkles size={14} /> Search My Jobs Now
-              </button>
-            )}
-            {(searchState === 'starting' || searchState === 'running') && (
-              <div className="flex items-center gap-3">
-                <div className="flex gap-1">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+        <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-[2rem] p-6">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-5">
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-2xl bg-amber-100 text-amber-600 mt-0.5">
+                <Crown size={22} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="font-bold text-amber-900">Premium Active</p>
+                  {subscription.expires_at && (
+                    <span className="text-xs text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">
+                      Expires {new Date(subscription.expires_at).toLocaleDateString()}
+                    </span>
+                  )}
                 </div>
-                <span className="text-sm font-medium text-amber-700">{searchMsg}</span>
+                {profileRoles.length > 0 ? (
+                  <p className="text-sm text-amber-700 mt-1">
+                    Searching Indeed for: <span className="font-medium">{profileRoles.slice(0, 3).join(', ')}</span>
+                  </p>
+                ) : (
+                  <div className="flex items-center gap-2 mt-1">
+                    <AlertCircle size={13} className="text-amber-500" />
+                    <p className="text-sm text-amber-700">
+                      No job roles set.{' '}
+                      <a href="/profile" className="font-semibold underline underline-offset-2 hover:text-amber-900">
+                        Add preferred roles in your profile
+                      </a>{' '}
+                      to personalise your search.
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
-            {searchState === 'done' && (
-              <div className="flex items-center gap-2 text-sm font-medium text-emerald-700">
-                <CheckCircle size={16} />
-                <span>{searchMsg}</span>
-                <button onClick={() => setSearchState('idle')} className="ml-2 text-xs text-amber-600 underline">Search again</button>
-              </div>
-            )}
-            {searchState === 'error' && (
-              <div className="flex items-center gap-2 text-sm font-medium text-red-600">
-                <AlertCircle size={16} />
-                <span>{searchMsg}</span>
-                <button onClick={() => setSearchState('idle')} className="ml-2 text-xs underline">Retry</button>
-              </div>
-            )}
+            </div>
+
+            <div className="flex flex-col items-end gap-2 shrink-0">
+              {searchState === 'idle' && (
+                <button
+                  onClick={handlePremiumSearch}
+                  disabled={profileRoles.length === 0}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+                >
+                  <Sparkles size={14} /> Search My Jobs Now
+                </button>
+              )}
+              {(searchState === 'starting' || searchState === 'running') && (
+                <div className="flex items-center gap-3 px-4 py-2.5 rounded-full bg-amber-100">
+                  <div className="flex gap-1">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                  <span className="text-sm font-medium text-amber-800">{searchMsg}</span>
+                </div>
+              )}
+              {searchState === 'done' && (
+                <div className="text-right">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-emerald-700">
+                    <CheckCircle size={15} />
+                    {newJobCount > 0 ? `${newJobCount} new job${newJobCount === 1 ? '' : 's'} added!` : 'No new jobs this time'}
+                  </div>
+                  <button onClick={() => setSearchState('idle')} className="text-xs text-amber-600 underline mt-1">Search again</button>
+                </div>
+              )}
+              {searchState === 'error' && (
+                <div className="text-right">
+                  <div className="flex items-center gap-2 text-sm font-medium text-red-600">
+                    <AlertCircle size={15} /> {searchMsg}
+                  </div>
+                  <button onClick={() => setSearchState('idle')} className="text-xs text-red-500 underline mt-1">Retry</button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
 
       {/* Free tier upgrade prompt */}
-      {!isPremium && (
+      {!isPremium && !isAdmin && (
         <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-[2rem] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-indigo-100 text-indigo-500">
               <Lock size={20} />
             </div>
             <div>
-              <p className="font-semibold text-indigo-900 text-sm">Unlock Premium Job Search</p>
+              <p className="font-semibold text-indigo-900 text-sm">Unlock Personalised Job Search</p>
               <p className="text-xs text-indigo-600 mt-0.5">
-                Get personalized Indeed jobs matched to your profile, searched automatically every day.
+                Get jobs matched to your profile from Indeed, searched automatically every day.
               </p>
             </div>
           </div>
@@ -331,8 +369,8 @@ export function Jobs() {
 
         <div className="border-t border-gray-200/60" />
 
-        {/* Fetch by keyword row */}
-        <div>
+        {/* Fetch by keyword row — admin only */}
+        {isAdmin && <div>
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Fetch new jobs from remote sources</p>
           <div className="flex flex-col sm:flex-row gap-3 items-center">
             <div className="relative flex-1 w-full">
@@ -366,7 +404,7 @@ export function Jobs() {
             </label>
           </div>
           {ingestMsg && <p className="text-sm font-medium text-blue-600 mt-3">{ingestMsg}</p>}
-        </div>
+        </div>}
       </div>
 
       {loading && (
