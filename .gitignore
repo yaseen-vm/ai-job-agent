@@ -8,4 +8,3 @@ dist/
 .dev.vars
 .DS_Store
 *.tsbuildinfo
-pnpm-lock.yaml
