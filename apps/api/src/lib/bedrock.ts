@@ -14,14 +14,13 @@ export function createBedrockClient(accessKeyId: string, secretAccessKey: string
   const aws = new AwsClient({ accessKeyId, secretAccessKey, region, service: 'bedrock' });
 
   return {
-    // Legacy Anthropic-format invoke (used by matching/ranking/draft agents)
+    // Invoke via the Converse API — supports both regular models and cross-region inference profiles.
     async invoke(modelId: string, systemPrompt: string, messages: BedrockMessage[], maxTokens = 4096): Promise<string> {
-      const url = `https://bedrock-runtime.${region}.amazonaws.com/model/${encodeURIComponent(modelId)}/invoke`;
+      const url = `https://bedrock-runtime.${region}.amazonaws.com/model/${encodeURIComponent(modelId)}/converse`;
       const body = JSON.stringify({
-        anthropic_version: 'bedrock-2023-05-31',
-        max_tokens: maxTokens,
-        system: systemPrompt,
-        messages,
+        system: [{ text: systemPrompt }],
+        messages: messages.map(m => ({ role: m.role, content: [{ text: m.content }] })),
+        inferenceConfig: { maxTokens },
       });
       const res = await aws.fetch(url, {
         method: 'POST',
@@ -29,10 +28,10 @@ export function createBedrockClient(accessKeyId: string, secretAccessKey: string
         body,
       });
       if (!res.ok) throw new Error(`Bedrock error ${res.status}: ${await res.text()}`);
-      const data = await res.json<{ content: Array<{ type: string; text: string }> }>();
-      const block = data.content.find(b => b.type === 'text');
-      if (!block) throw new Error('No text block in Bedrock response');
-      return block.text;
+      const data = await res.json<{ output: { message: { content: Array<{ text?: string }> } } }>();
+      const text = data.output.message.content.find(b => b.text !== undefined)?.text;
+      if (!text) throw new Error('No text block in Bedrock response');
+      return text;
     },
 
     // Converse API — supports document/image blocks, works with Nova and other models

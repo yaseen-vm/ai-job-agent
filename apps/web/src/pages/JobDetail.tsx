@@ -7,6 +7,7 @@ export function JobDetail() {
   const [job, setJob] = useState<Record<string, unknown> | null>(null);
   const [match, setMatch] = useState<Record<string, unknown> | null>(null);
   const [matchLoading, setMatchLoading] = useState(false);
+  const [matchError, setMatchError] = useState(false);
   const [draftRunId, setDraftRunId] = useState<string | null>(null);
   const [draftContent, setDraftContent] = useState('');
   const [saved, setSaved] = useState(false);
@@ -26,6 +27,7 @@ export function JobDetail() {
   const requestMatch = async () => {
     if (!id) return;
     setMatchLoading(true);
+    setMatchError(false);
     try {
       const res = await api.agents.match(id);
       const interval = setInterval(async () => {
@@ -38,10 +40,12 @@ export function JobDetail() {
         } else if (run.status === 'failed') {
           clearInterval(interval);
           setMatchLoading(false);
+          setMatchError(true);
         }
       }, 2000);
     } catch {
       setMatchLoading(false);
+      setMatchError(true);
     }
   };
 
@@ -144,12 +148,15 @@ export function JobDetail() {
           {!match && !matchLoading && (
             <button
               onClick={requestMatch}
-              className="text-sm bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 transition-colors"
+              className={`text-sm px-4 py-1.5 rounded-lg transition-colors ${matchError ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
             >
-              Compute match
+              {matchError ? 'Retry match' : 'Compute match'}
             </button>
           )}
           {matchLoading && <span className="text-sm text-gray-400">Computing…</span>}
+          {matchError && !matchLoading && (
+            <span className="text-xs text-red-500 ml-2">Analysis failed — check your profile and try again</span>
+          )}
         </div>
 
         {match && (

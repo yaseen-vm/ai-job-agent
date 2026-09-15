@@ -15,13 +15,14 @@ interface Job {
   score?: number;
 }
 
-export function JobCard({ job, saved, onSave, onUnsave, matchScore, matchLoading, onComputeMatch }: {
+export function JobCard({ job, saved, onSave, onUnsave, matchScore, matchLoading, matchError, onComputeMatch }: {
   job: Job;
   saved?: boolean;
   onSave?: (id: string) => void;
   onUnsave?: (id: string) => void;
   matchScore?: number;
   matchLoading?: boolean;
+  matchError?: boolean;
   onComputeMatch?: (id: string) => void;
 }) {
   const salary = job.min_salary || job.max_salary
@@ -48,6 +49,14 @@ export function JobCard({ job, saved, onSave, onUnsave, matchScore, matchLoading
             </span>
           ) : matchLoading ? (
             <span className="text-xs font-medium text-gray-400 bg-gray-100 px-3 py-1 rounded-full">Computing...</span>
+          ) : matchError ? (
+            <button
+              onClick={() => onComputeMatch?.(job.id)}
+              className="text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-full transition-colors whitespace-nowrap"
+              title="Match failed — click to retry"
+            >
+              Retry match
+            </button>
           ) : onComputeMatch ? (
             <button
               onClick={() => onComputeMatch(job.id)}

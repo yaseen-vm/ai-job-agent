@@ -31,6 +31,7 @@ export function Jobs() {
   const [ingesting, setIngesting] = useState(false);
   const [matchScores, setMatchScores] = useState<Map<string, number>>(new Map());
   const [matchLoading, setMatchLoading] = useState<Set<string>>(new Set());
+  const [matchErrors, setMatchErrors] = useState<Set<string>>(new Set());
   const [ingestMsg, setIngestMsg] = useState('');
   const [ingestKeyword, setIngestKeyword] = useState('');
   const [clearJobs, setClearJobs] = useState(true);
@@ -90,6 +91,7 @@ export function Jobs() {
 
   const computeMatch = async (jobId: string) => {
     setMatchLoading(prev => new Set([...prev, jobId]));
+    setMatchErrors(prev => { const n = new Set(prev); n.delete(jobId); return n; });
     try {
       const res = await api.agents.match(jobId);
       const interval = setInterval(async () => {
@@ -100,11 +102,14 @@ export function Jobs() {
           if (run.status === 'completed') {
             const m = await api.jobs.getMatch(jobId) as { score?: number };
             if (m.score !== undefined) setMatchScores(prev => new Map([...prev, [jobId, m.score as number]]));
+          } else {
+            setMatchErrors(prev => new Set([...prev, jobId]));
           }
         }
       }, 2000);
     } catch {
       setMatchLoading(prev => { const n = new Set(prev); n.delete(jobId); return n; });
+      setMatchErrors(prev => new Set([...prev, jobId]));
     }
   };
 
@@ -259,6 +264,7 @@ export function Jobs() {
             onUnsave={handleUnsave}
             matchScore={matchScores.get(job.id)}
             matchLoading={matchLoading.has(job.id)}
+            matchError={matchErrors.has(job.id)}
             onComputeMatch={computeMatch}
           />
         ))}
