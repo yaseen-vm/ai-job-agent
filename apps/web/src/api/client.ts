@@ -109,7 +109,8 @@ export const api = {
 
   premium: {
     status: () => request<{ subscription: { id: string; plan: string; status: string; started_at: number; expires_at: number | null } | null; isPremium: boolean; searchPending: boolean }>('/premium/status'),
-    triggerSearch: () => request<{ status: string; message: string }>('/premium/search', { method: 'POST' }),
+    triggerSearch: () => request<{ runIds: string[]; terms: string[]; status: string }>('/premium/search', { method: 'POST' }),
+    pollSearch: (runIds: string[]) => request<{ results: { runId: string; searchTerm?: string; status: string; count?: number }[]; allDone: boolean; totalNew: number }>(`/premium/search/poll?runIds=${runIds.join(',')}`),
   },
 
   agents: {

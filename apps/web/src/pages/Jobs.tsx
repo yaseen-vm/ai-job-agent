@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../api/client.ts';
 import { JobCard } from '../components/JobCard.tsx';
 import { useSubscription } from '../hooks/useSubscription.ts';
-import { Search, MapPin, Filter, Database, Briefcase, Bookmark, Zap, Crown, Sparkles, Lock } from 'lucide-react';
+import { Search, MapPin, Filter, Database, Briefcase, Bookmark, Zap, Crown, Sparkles, Lock, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface Job {
   id: string;
@@ -36,11 +36,15 @@ export function Jobs() {
   const [ingestMsg, setIngestMsg] = useState('');
   const [ingestKeyword, setIngestKeyword] = useState('');
   const [clearJobs, setClearJobs] = useState(true);
-  const [searchMsg, setSearchMsg] = useState('');
-  const [searchTriggering, setSearchTriggering] = useState(false);
   const limit = 20;
 
   const { isPremium, subscription } = useSubscription();
+
+  // Premium instant search state
+  const [searchState, setSearchState] = useState<'idle' | 'starting' | 'running' | 'done' | 'error'>('idle');
+  const [searchMsg, setSearchMsg] = useState('');
+  const [newJobCount, setNewJobCount] = useState(0);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchJobs = useCallback(async (newOffset = 0) => {
     setLoading(true);
@@ -119,16 +123,43 @@ export function Jobs() {
   };
 
   const handlePremiumSearch = async () => {
-    setSearchTriggering(true);
-    setSearchMsg('');
+    if (searchState === 'running' || searchState === 'starting') return;
+    if (pollRef.current) clearInterval(pollRef.current);
+
+    setSearchState('starting');
+    setSearchMsg('Connecting to Apify...');
+    setNewJobCount(0);
+
+    let runIds: string[] = [];
     try {
       const res = await api.premium.triggerSearch();
-      setSearchMsg(res.message);
+      runIds = res.runIds;
+      setSearchState('running');
+      setSearchMsg(`Searching Indeed for: ${res.terms.join(', ')}...`);
     } catch (e) {
+      setSearchState('error');
       setSearchMsg((e as Error).message);
-    } finally {
-      setSearchTriggering(false);
+      return;
     }
+
+    // Poll every 8 seconds until all runs complete
+    pollRef.current = setInterval(async () => {
+      try {
+        const poll = await api.premium.pollSearch(runIds);
+        if (poll.allDone) {
+          clearInterval(pollRef.current!);
+          pollRef.current = null;
+          setNewJobCount(poll.totalNew);
+          setSearchState('done');
+          setSearchMsg(poll.totalNew > 0
+            ? `Found ${poll.totalNew} new job${poll.totalNew === 1 ? '' : 's'}! Refreshing list...`
+            : 'Search complete. No new jobs found this time.');
+          if (poll.totalNew > 0) {
+            setTimeout(() => fetchJobs(0), 1500);
+          }
+        }
+      } catch { /* poll errors are transient */ }
+    }, 8000);
   };
 
   const handleIngest = async () => {
@@ -189,15 +220,38 @@ export function Jobs() {
             </div>
           </div>
           <div className="flex flex-col items-end gap-2">
-            <button
-              onClick={handlePremiumSearch}
-              disabled={searchTriggering}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 disabled:opacity-50 transition-colors shadow-sm"
-            >
-              <Sparkles size={14} />
-              {searchTriggering ? 'Queuing...' : 'Search My Jobs Now'}
-            </button>
-            {searchMsg && <p className="text-xs text-amber-700 max-w-xs text-right">{searchMsg}</p>}
+            {searchState === 'idle' && (
+              <button
+                onClick={handlePremiumSearch}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 transition-colors shadow-sm"
+              >
+                <Sparkles size={14} /> Search My Jobs Now
+              </button>
+            )}
+            {(searchState === 'starting' || searchState === 'running') && (
+              <div className="flex items-center gap-3">
+                <div className="flex gap-1">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+                <span className="text-sm font-medium text-amber-700">{searchMsg}</span>
+              </div>
+            )}
+            {searchState === 'done' && (
+              <div className="flex items-center gap-2 text-sm font-medium text-emerald-700">
+                <CheckCircle size={16} />
+                <span>{searchMsg}</span>
+                <button onClick={() => setSearchState('idle')} className="ml-2 text-xs text-amber-600 underline">Search again</button>
+              </div>
+            )}
+            {searchState === 'error' && (
+              <div className="flex items-center gap-2 text-sm font-medium text-red-600">
+                <AlertCircle size={16} />
+                <span>{searchMsg}</span>
+                <button onClick={() => setSearchState('idle')} className="ml-2 text-xs underline">Retry</button>
+              </div>
+            )}
           </div>
         </div>
       )}

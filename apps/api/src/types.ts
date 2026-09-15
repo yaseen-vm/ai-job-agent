@@ -10,5 +10,6 @@ export interface Env {
   AWS_SECRET_ACCESS_KEY: string;
   AWS_REGION: string;
   BEDROCK_MODEL_ID: string;
+  APIFY_API_TOKEN: string;
   ENVIRONMENT: string;
 }
