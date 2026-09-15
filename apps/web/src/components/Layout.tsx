@@ -1,9 +1,11 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/auth.ts';
-import { Settings, Bell, User, Briefcase, Bookmark, FileText, LayoutDashboard, ShieldCheck } from 'lucide-react';
+import { useSubscription } from '../hooks/useSubscription.ts';
+import { Settings, Bell, User, Briefcase, Bookmark, FileText, LayoutDashboard, ShieldCheck, Crown } from 'lucide-react';
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, logout } = useAuthStore();
+  const { isPremium } = useSubscription();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -55,7 +57,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <button className="p-2 rounded-full hover:bg-white transition-colors text-gray-600">
                   <Bell size={20} />
                 </button>
-                <button 
+                {isPremium && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+                    <Crown size={11} /> Premium
+                  </span>
+                )}
+                <button
                   onClick={() => navigate('/profile')}
                   className="p-2 rounded-full hover:bg-white transition-colors text-gray-600"
                 >

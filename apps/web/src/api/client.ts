@@ -107,6 +107,11 @@ export const api = {
     me: () => request<{ subscription: { id: string; plan: string; status: string; started_at: number; expires_at: number | null } }>('/subscriptions/me'),
   },
 
+  premium: {
+    status: () => request<{ subscription: { id: string; plan: string; status: string; started_at: number; expires_at: number | null } | null; isPremium: boolean; searchPending: boolean }>('/premium/status'),
+    triggerSearch: () => request<{ status: string; message: string }>('/premium/search', { method: 'POST' }),
+  },
+
   agents: {
     match: (jobId: string) =>
       request<{ agent_run_id: string }>('/agents/match', { method: 'POST', body: JSON.stringify({ job_id: jobId }) }),

@@ -8,6 +8,7 @@ import { applicationsRouter } from './routes/applications.ts';
 import { agentsRouter } from './routes/agents.ts';
 import { subscriptionsRouter } from './routes/subscriptions.ts';
 import { adminRouter } from './routes/admin.ts';
+import { premiumRouter } from './routes/premium.ts';
 import { fetchJobs } from './lib/jobsearch.ts';
 import { ulid } from './lib/ulid.ts';
 import type { Env } from './types.ts';
@@ -34,6 +35,7 @@ app.route('/applications', applicationsRouter);
 app.route('/agents', agentsRouter);
 app.route('/subscriptions', subscriptionsRouter);
 app.route('/admin', adminRouter);
+app.route('/premium', premiumRouter);
 
 app.get('/health', (c) => c.json({ status: 'ok' }));
 

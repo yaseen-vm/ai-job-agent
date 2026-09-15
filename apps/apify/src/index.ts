@@ -23,8 +23,32 @@ export default {
 // search terms and store the run ID in KV for the collect phase to pick up.
 
 async function dispatch(env: ApifyEnv): Promise<void> {
+  // Include manually-triggered users (via POST /premium/search) alongside scheduled subscribers
+  const manualList = await env.KV.list({ prefix: 'apify:manual:' });
+  const manualUserIds = new Set(manualList.keys.map(k => k.name.slice('apify:manual:'.length)));
+
   const subscribers = await getActiveSubscribers(env);
-  console.log(`Apify dispatch: ${subscribers.length} active subscribers`);
+
+  // Merge: scheduled subscribers + manual trigger users (deduped)
+  const extraIds = [...manualUserIds].filter(id => !subscribers.find(s => s.id === id));
+  if (extraIds.length > 0) {
+    const placeholders = extraIds.map(() => '?').join(',');
+    const extra = await env.DB.prepare(`
+      SELECT u.id, p.preferred_roles, p.skills
+      FROM users u
+      JOIN subscriptions s ON s.user_id = u.id
+      LEFT JOIN profiles p ON p.user_id = u.id
+      WHERE u.id IN (${placeholders}) AND s.status = 'active'
+    `).bind(...extraIds).all<SubscriberRow>();
+    subscribers.push(...(extra.results ?? []));
+  }
+
+  console.log(`Apify dispatch: ${subscribers.length} users (${manualUserIds.size} manual triggers)`);
+
+  // Clear manual trigger flags
+  for (const key of manualList.keys) {
+    await env.KV.delete(key.name);
+  }
 
   for (const user of subscribers) {
     const terms = buildSearchTerms(user);

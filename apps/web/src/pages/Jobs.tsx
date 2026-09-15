@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../api/client.ts';
 import { JobCard } from '../components/JobCard.tsx';
-import { Search, MapPin, Filter, Database, Briefcase, Bookmark, Zap } from 'lucide-react';
+import { useSubscription } from '../hooks/useSubscription.ts';
+import { Search, MapPin, Filter, Database, Briefcase, Bookmark, Zap, Crown, Sparkles, Lock } from 'lucide-react';
 
 interface Job {
   id: string;
@@ -35,7 +36,11 @@ export function Jobs() {
   const [ingestMsg, setIngestMsg] = useState('');
   const [ingestKeyword, setIngestKeyword] = useState('');
   const [clearJobs, setClearJobs] = useState(true);
+  const [searchMsg, setSearchMsg] = useState('');
+  const [searchTriggering, setSearchTriggering] = useState(false);
   const limit = 20;
+
+  const { isPremium, subscription } = useSubscription();
 
   const fetchJobs = useCallback(async (newOffset = 0) => {
     setLoading(true);
@@ -113,6 +118,19 @@ export function Jobs() {
     }
   };
 
+  const handlePremiumSearch = async () => {
+    setSearchTriggering(true);
+    setSearchMsg('');
+    try {
+      const res = await api.premium.triggerSearch();
+      setSearchMsg(res.message);
+    } catch (e) {
+      setSearchMsg((e as Error).message);
+    } finally {
+      setSearchTriggering(false);
+    }
+  };
+
   const handleIngest = async () => {
     if (!ingestKeyword.trim()) {
       setIngestMsg('Enter a keyword first.');
@@ -154,6 +172,55 @@ export function Jobs() {
           <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Matches Computed</span>
         </div>
       </div>
+
+      {/* Premium banner */}
+      {isPremium && subscription && (
+        <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-[2rem] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-100 text-amber-600">
+              <Crown size={20} />
+            </div>
+            <div>
+              <p className="font-semibold text-amber-900 text-sm">Premium Active</p>
+              <p className="text-xs text-amber-700 mt-0.5">
+                Your profile is searched on Indeed daily via Apify.
+                {subscription.expires_at && ` Renews ${new Date(subscription.expires_at).toLocaleDateString()}.`}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <button
+              onClick={handlePremiumSearch}
+              disabled={searchTriggering}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600 disabled:opacity-50 transition-colors shadow-sm"
+            >
+              <Sparkles size={14} />
+              {searchTriggering ? 'Queuing...' : 'Search My Jobs Now'}
+            </button>
+            {searchMsg && <p className="text-xs text-amber-700 max-w-xs text-right">{searchMsg}</p>}
+          </div>
+        </div>
+      )}
+
+      {/* Free tier upgrade prompt */}
+      {!isPremium && (
+        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-[2rem] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-indigo-100 text-indigo-500">
+              <Lock size={20} />
+            </div>
+            <div>
+              <p className="font-semibold text-indigo-900 text-sm">Unlock Premium Job Search</p>
+              <p className="text-xs text-indigo-600 mt-0.5">
+                Get personalized Indeed jobs matched to your profile, searched automatically every day.
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-semibold px-4 py-2 rounded-full bg-indigo-100 text-indigo-600 border border-indigo-200 whitespace-nowrap">
+            Contact admin to upgrade
+          </span>
+        </div>
+      )}
 
       <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 shadow-sm border border-white/50 space-y-6">
         {/* Filter row */}
