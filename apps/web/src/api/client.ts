@@ -25,7 +25,7 @@ export const api = {
         body: JSON.stringify({ email, password }),
       }),
     login: (email: string, password: string) =>
-      request<{ token: string; user: { id: string; email: string } }>('/auth/login', {
+      request<{ token: string; user: { id: string; email: string }; isAdmin: boolean }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       }),

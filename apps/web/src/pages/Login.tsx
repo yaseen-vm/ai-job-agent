@@ -17,8 +17,8 @@ export function Login() {
     setLoading(true);
     try {
       const res = await api.auth.login(email, password);
-      login(res.token, res.user);
-      navigate('/jobs');
+      login(res.token, res.user, res.isAdmin);
+      navigate(res.isAdmin ? '/admin' : '/jobs');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {

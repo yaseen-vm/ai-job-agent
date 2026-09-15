@@ -59,5 +59,6 @@ authRouter.post('/login', async (c) => {
   if (!valid) return c.json({ error: { code: 'UNAUTHORIZED', message: 'Invalid credentials' } }, 401);
 
   const token = await signToken(user.id, c.env.JWT_SECRET);
-  return c.json({ token, user: { id: user.id, email: user.email } });
+  const isAdmin = !!(await c.env.KV.get(`admin:${user.id}`));
+  return c.json({ token, user: { id: user.id, email: user.email }, isAdmin });
 });
