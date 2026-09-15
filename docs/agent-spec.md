@@ -1,6 +1,6 @@
 # AI Job Agent — Agent Specification
 
-All agents run inside **Agent Workers** (Cloudflare Workers triggered by Queues). Each agent has a fixed set of declared tools — it cannot access infrastructure outside those tools. Every run is recorded in the `agent_runs` D1 table.
+All agents run inside the **API Worker** via `waitUntil` — not via Queues or a separate Worker. Each agent has a fixed set of declared tools — it cannot access infrastructure outside those tools. Every run is recorded in the `agent_runs` D1 table.
 
 LLM: **Amazon Bedrock — Claude Opus** for all agents requiring reasoning. **Workers AI** for embedding generation only.
 
@@ -11,13 +11,13 @@ LLM: **Amazon Bedrock — Claude Opus** for all agents requiring reasoning. **Wo
 - Agents never take external side effects (submit forms, send emails, call external APIs on behalf of the user) without a prior explicit `approved` record in D1.
 - All scraped or user-provided content is passed to the LLM as data, clearly delimited — never interpolated into the system prompt.
 - Tool inputs and outputs are logged to `agent_runs.tool_calls`.
-- Agents must complete within the Cloudflare Queue 24-hour retention window. Long jobs must checkpoint progress to D1.
+- Agents must complete within the Cloudflare Workers CPU time budget. Long jobs should checkpoint progress to D1.
 
 ---
 
 ## 1. Resume Extraction Agent
 
-**Trigger:** Message on `QUEUE_AGENT` with `{ type: "extraction", user_id, resume_r2_key }`
+**Trigger:** `POST /profile/resume` → `waitUntil(runExtractionAgent(env, agentRunId, userId, r2Key))`
 
 **Purpose:** Parse a resume from R2 and populate the user's structured profile in D1.
 
@@ -51,7 +51,7 @@ LLM: **Amazon Bedrock — Claude Opus** for all agents requiring reasoning. **Wo
 
 ## 2. Job Extraction Agent
 
-**Trigger:** Message on `QUEUE_INGESTION` with `{ type: "extraction", source_name, raw_job }`
+**Trigger:** Called inline during ingestion (Adzuna adapter via `POST /admin/ingest`, or Apify Worker cron at 03:00 UTC). No queue message — normalization runs synchronously inside the ingestion loop.
 
 **Purpose:** Normalize a raw job listing from any provider into the canonical job schema and store in D1.
 
@@ -73,7 +73,7 @@ LLM: **Amazon Bedrock — Claude Opus** for all agents requiring reasoning. **Wo
 
 ## 3. Job Matching Agent
 
-**Trigger:** Message on `QUEUE_AGENT` with `{ type: "matching", user_id, job_id }`
+**Trigger:** `POST /agents/match` → `waitUntil(runMatchingAgent(env, agentRunId, userId, jobId))`
 
 **Purpose:** Score and explain candidate-job fit for a specific user-job pair.
 
@@ -104,7 +104,7 @@ LLM: **Amazon Bedrock — Claude Opus** for all agents requiring reasoning. **Wo
 
 ## 4. Ranking Agent
 
-**Trigger:** Message on `QUEUE_AGENT` with `{ type: "ranking", user_id }`
+**Trigger:** `POST /agents/rank` → `waitUntil(runRankingAgent(env, agentRunId, userId))`
 
 **Purpose:** Rank all saved or recently discovered jobs for a user by fit.
 
@@ -130,7 +130,7 @@ LLM: **Amazon Bedrock — Claude Opus** for all agents requiring reasoning. **Wo
 
 ## 5. Application Draft Agent
 
-**Trigger:** Message on `QUEUE_AGENT` with `{ type: "draft", user_id, job_id, draft_type }`
+**Trigger:** `POST /agents/draft` → `waitUntil(runDraftAgent(env, agentRunId, userId, jobId, draftType))`
 
 **Purpose:** Generate a cover letter or profile summary tailored to a specific job.
 
@@ -153,23 +153,24 @@ LLM: **Amazon Bedrock — Claude Opus** for all agents requiring reasoning. **Wo
 
 ## 6. Job Discovery Agent
 
-**Trigger:** Scheduled cron or message on `QUEUE_INGESTION` with `{ type: "discovery", source_name }`
+**Trigger:** Two mechanisms — (1) `POST /admin/ingest` triggers inline Adzuna/Remotive fetch via `waitUntil`; (2) Apify Worker scheduled crons (01:00 UTC dispatch, 03:00 UTC collect) for Indeed via `borderline~indeed-scraper`.
 
-**Purpose:** Fetch new job listings from a provider and enqueue them for extraction.
+**Purpose:** Fetch new job listings from a provider, normalize, deduplicate, and write to D1 + Vectorize.
 
 **Tools**
 
 | Tool | Description |
 |---|---|
-| `fetch_source` | Call provider adapter (API or permitted scrape) |
-| `enqueue_extraction` | Push raw jobs onto `QUEUE_INGESTION` for the extraction agent |
+| `fetch_source` | Call provider adapter (Adzuna API, Remotive API, or Apify actor) |
+| `write_jobs` | Upsert normalized jobs to D1 (`source_name`, `source_job_id` deduplication) |
+| `generate_embedding` | Generate job embedding via Workers AI and upsert to Vectorize `job-embeddings` |
 
 **Flow**
 1. `fetch_source` → raw job list
-2. Filter out already-known `source_job_id` values (check D1)
-3. `enqueue_extraction` for each new job
+2. Filter out already-known `(source_name, source_job_id)` values (check D1)
+3. `write_jobs` + `generate_embedding` for each new job
 
-**Safety:** Provider adapters are isolated — a failure in one does not affect others. Each adapter enforces its own rate-limit and robots.txt compliance.
+**Safety:** Provider adapters are isolated — a failure in one does not affect others.
 
 ---
 

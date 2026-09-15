@@ -18,7 +18,7 @@ Cloud-native, API-first, event-driven architecture running entirely on the Cloud
   - Native V8 execution — no WASM layer, no bundle size issues, minimal cold-start overhead.
   - Shared TypeScript types between frontend and backend via a monorepo workspace.
 - **REST API** — primary client-facing API contract, served from a Hono Worker.
-- **Background processing** — asynchronous ingestion, normalization, matching, and agent workflows via Cloudflare Queues and separate Worker consumers written in TypeScript.
+- **Background processing** — asynchronous agent workflows run via `waitUntil` inside the API Worker; scheduled ingestion runs in separate cron-triggered Workers (Ingestion Worker, Apify Worker).
 
 ## Cloudflare Services (Free Tier)
 
@@ -63,9 +63,10 @@ Cloud-native, API-first, event-driven architecture running entirely on the Cloud
 
 ## Job Data Sources
 
-- Official job APIs and feeds where available.
-- Permitted web crawling/scraping from Workers where legally and technically appropriate.
-- User-provided job URLs or sources.
+- **Adzuna API** (`source_name: 'adzuna'`) — free tier; aggregates 50+ job boards; used for standard ingestion via `POST /admin/ingest` and the daily Ingestion Worker cron.
+- **Apify `borderline~indeed-scraper`** (`source_name: 'apify_indeed'`) — premium feature; dispatched by the Apify Worker at 01:00 UTC (and on-demand via `POST /premium/search`); results collected at 03:00 UTC.
+- **Remotive API** (`source_name: 'remotive'`) — free remote-job feed; used by the standalone Ingestion Worker.
+- User-provided job URLs or sources (future).
 - Provider-specific adapters so one source failure does not break the complete ingestion pipeline.
 
 ## Authentication & Authorization
@@ -76,10 +77,9 @@ Cloud-native, API-first, event-driven architecture running entirely on the Cloud
 
 ## Infrastructure & Delivery
 
-- **Wrangler** — local development, deployment, and environment management for all Workers, D1, KV, R2, and Queues resources.
-- **GitHub Actions** — CI/CD pipeline for testing, building, and deploying to Cloudflare.
-- **Terraform / Pulumi with Cloudflare provider** — declarative provisioning of all Cloudflare resources.
-- Separate environments for development, staging, and production (Wrangler environments).
+- **Wrangler** — local development, deployment, and environment management for all Workers, D1, KV, R2, and Vectorize resources.
+- **GitHub Actions** — CI/CD pipeline for testing, building, and deploying all four apps to Cloudflare (typecheck on every push; deploy on `main`).
+- Separate environments for development and production (Wrangler environments).
 
 ## Observability
 

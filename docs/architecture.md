@@ -13,26 +13,37 @@
 │              API Worker (Hono)                      │
 │         Cloudflare Workers — V8 native              │
 │  Routes: /auth  /profile  /jobs  /applications      │
-│          /agents  /search                           │
-└──┬──────────┬──────────┬──────────┬─────────────────┘
-   │          │          │          │
-   ▼          ▼          ▼          ▼
-  D1         KV          R2       Queues
-(data)    (cache)    (resumes)  (async jobs)
-                                    │
-              ┌─────────────────────┤
-              │                     │
-   ┌──────────▼──────┐   ┌──────────▼──────────┐
-   │ Ingestion Worker│   │   Agent Worker       │
-   │ - fetch sources │   │ - extraction         │
-   │ - normalize     │   │ - matching           │
-   │ - deduplicate   │   │ - ranking            │
-   │ - write D1      │   │ - draft content      │
-   └──────────┬──────┘   └──────────┬──────────┘
-              │                     │
-              ▼                     ▼
-           D1 / R2         Amazon Bedrock
-         Vectorize          (Claude Opus)
+│          /agents  /saved-jobs  /admin               │
+│          /subscriptions  /premium                   │
+└──┬──────────┬──────────┬────────────────────────────┘
+   │          │          │
+   ▼          ▼          ▼
+  D1         KV          R2        Vectorize
+(data)    (cache)    (resumes)    (embeddings)
+                                        │
+          waitUntil (async)             │
+   ┌──────────────────────┐             │
+   │  Inline Agent Tasks  │◄────────────┘
+   │ - extraction         │
+   │ - matching           │
+   │ - ranking            │
+   │ - draft content      │
+   └──────────┬───────────┘
+              │
+              ▼
+       Amazon Bedrock
+        (Claude Opus)
+
+┌─────────────────────────────────────────────────────┐
+│            Apify Worker (Scheduled)                 │
+│  01:00 UTC — dispatch Apify actor (Indeed scrape)   │
+│  03:00 UTC — collect results → normalize → D1       │
+└─────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────┐
+│         Ingestion Worker (Daily Cron)               │
+│  Remotive adapter → normalize → D1 → Vectorize      │
+└─────────────────────────────────────────────────────┘
 ```
 
 ## Components
@@ -41,15 +52,21 @@
 Static SPA built with Vite. No server-side rendering. All data fetched from the API Worker via REST. Deployed automatically from `main` branch via GitHub Actions.
 
 ### API Worker (Hono)
-Single Hono Worker handling all client-facing REST requests. Thin handlers: validate input, authorize, read/write D1/KV/R2, push to Queues for async work, return response. No heavy computation in the request path — keep within the 10 ms CPU limit.
+Single Hono Worker handling all client-facing REST requests. Thin handlers: validate input, authorize, read/write D1/KV/R2, return response. AI agent tasks run via `waitUntil` so they do not block the HTTP response. No heavy computation in the request path — keep within the 10 ms CPU limit.
 
-Bindings: `D1`, `KV`, `R2`, `QUEUE_INGESTION`, `QUEUE_AGENT`, `AI` (Workers AI for embeddings).
+Bindings: `DB`, `KV`, `R2`, `AI`, `VECTORIZE_JOBS`, `VECTORIZE_PROFILES`, plus secrets `JWT_SECRET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `BEDROCK_MODEL_ID`, `APIFY_API_TOKEN`, `ENVIRONMENT`.
 
-### Ingestion Worker (Queue Consumer)
-Triggered by messages on `QUEUE_INGESTION`. Fetches job listings from provider adapters, normalizes fields to the canonical job schema, deduplicates against D1, writes new records to D1, generates embeddings via Workers AI, upserts to Vectorize. Idempotent by design.
+### Inline Agent Tasks
+All AI agents (`extraction`, `matching`, `ranking`, `draft`) run directly inside `waitUntil` in the API Worker's route handlers — not via Queues or a separate Worker. The route creates an `agent_runs` row with `status='pending'`, fires the agent async via `waitUntil`, then returns `202` with the run ID. Agents call `createBedrockClient` (wrapped `aws4fetch` SigV4) for Bedrock requests.
 
-### Agent Worker (Queue Consumer)
-Triggered by messages on `QUEUE_AGENT`. Executes bounded AI agent tasks: job extraction, candidate-job fit evaluation, ranking, application content drafting. Calls Claude Opus via Amazon Bedrock using `aws4fetch` for Sig V4 signing. Writes results and audit records to D1. Never takes external side effects (e.g., submitting applications) without a prior explicit user approval record in D1.
+### Ingestion Worker (Daily Cron)
+Standalone Worker triggered by a daily cron. Runs the Remotive adapter, normalizes job listings to the canonical schema, deduplicates against D1 by `(source_name, source_job_id)`, writes new records to D1, generates embeddings via Workers AI, and upserts to Vectorize. Idempotent by design.
+
+### Apify Worker (Scheduled)
+Standalone Worker with two scheduled cron triggers. At 01:00 UTC it dispatches an Apify `borderline~indeed-scraper` actor run. At 03:00 UTC it collects results, normalizes them to the canonical job schema, and writes to D1 (`source_name: 'apify_indeed'`). Triggered for on-demand searches by `POST /premium/search`.
+
+### Agent Worker (Standalone)
+A separate `apps/agent` Worker codebase exists as a deployment unit but the API Worker's route handlers use their own inline agent functions rather than dispatching to it.
 
 ### Amazon Bedrock (Claude Opus)
 External LLM provider accessed via HTTPS from Workers. Used for all complex reasoning tasks. AWS credentials stored as Workers Secrets. Requests signed with AWS Signature V4 via `aws4fetch`.
@@ -66,21 +83,30 @@ Browser → API Worker → D1 (keyword/filter query) + Vectorize (semantic) → 
 
 ### Resume Upload
 ```
-Browser → API Worker → R2 (store file) → QUEUE_AGENT (extract) →
-Agent Worker → Bedrock (extract structured data) → D1 (save profile) → KV (invalidate cache)
+Browser → API Worker → R2 (store file) →
+waitUntil: runExtractionAgent → Bedrock (extract structured data) →
+D1 (save profile) → Vectorize (upsert profile embedding)
+Response: 202 { agent_run_id } → Browser polls GET /agents/runs/:id
 ```
 
-### Job Ingestion (background)
+### Job Ingestion (background — Adzuna / Remotive)
 ```
-Scheduled trigger → Ingestion Worker → Provider adapters → normalize →
-D1 (upsert jobs) → Workers AI (embed) → Vectorize (upsert vectors)
+Scheduled trigger / POST /admin/ingest → Ingestion Worker / API Worker →
+Provider adapters → normalize → D1 (upsert jobs) →
+Workers AI (embed) → Vectorize (upsert vectors)
+```
+
+### Job Ingestion (premium — Apify/Indeed)
+```
+POST /premium/search → Apify Worker dispatches actor run →
+03:00 UTC cron collects results → normalize → D1 (source_name: apify_indeed)
 ```
 
 ### AI Matching
 ```
-API Worker → QUEUE_AGENT (match request) →
-Agent Worker → Vectorize (top-K similar jobs) → Bedrock (score + explain) →
-D1 (save match results) → API Worker polls D1 → Browser
+POST /agents/match → API Worker creates agent_runs row (pending) →
+waitUntil: runMatchingAgent → Bedrock (score + explain) →
+D1 (save match results) → Browser polls GET /agents/runs/:id
 ```
 
 ### Agent Audit Trail
@@ -91,6 +117,6 @@ Every agent invocation writes a record to `agent_runs` in D1:
 
 - AWS credentials: Workers Secrets only — never in code or KV.
 - R2 resume objects: private, served only through authenticated API Worker endpoints.
-- Agent tools: each tool is a typed function with explicit D1/KV/R2/Queues bindings — agents cannot access infrastructure outside declared tools.
-- Scraped job content: sanitized before inclusion in any Bedrock prompt to prevent prompt injection.
+- Agent tools: each tool is a typed function with explicit D1/KV/R2/Vectorize/Bedrock bindings — agents cannot access infrastructure outside declared tools.
+- Scraped job content: wrapped in XML tags (`<job>`, `<candidate>`) and system prompts mark it as untrusted — prevents prompt injection from external job descriptions.
 - All API routes: JWT validated at the API Worker before any binding access.

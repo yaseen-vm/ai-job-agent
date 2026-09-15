@@ -81,7 +81,7 @@ The frontend is a React + TypeScript + Vite SPA deployed on Cloudflare Pages. Th
 
 ### Performance
 - Fast interactive search and filtering: queries against D1 must be indexed appropriately to avoid full-table scans.
-- Asynchronous processing for job ingestion, AI extraction, and matching via Queues — keep Worker request handlers within the 10 ms CPU limit.
+- Asynchronous processing for job ingestion, AI extraction, and matching via `waitUntil` — keep Worker request handlers within the 10 ms CPU limit.
 - Workers AI is limited to 10,000 Neurons/day on the free tier. Expensive operations (resume extraction, bulk matching) must batch carefully, cache results, and avoid re-running inference on unchanged data.
 
 ## 5. Agent Safety and Control
@@ -115,7 +115,7 @@ The frontend is a React + TypeScript + Vite SPA deployed on Cloudflare Pages. Th
 | Workers AI | 10,000 Neurons/day | Cache AI responses in D1/KV; batch embeddings; do not re-run inference on unchanged inputs |
 | Vectorize | Included in free plan | Use for semantic job-candidate matching and RAG retrieval |
 
-**No external services are used.** PostgreSQL, Neon, Supabase, Hyperdrive, and Cloudflare Containers are excluded — they are either paid-only or require external hosting. The entire stack runs on Cloudflare free-tier services.
+**No paid database or hosting services are used.** PostgreSQL, Neon, Supabase, Hyperdrive, and Cloudflare Containers are excluded — they are either paid-only or require external hosting. The stack runs on Cloudflare free-tier services plus Amazon Bedrock (pay-per-use LLM), Adzuna API (free tier, job search aggregator), and Apify (usage-based, premium Indeed scraping via `borderline~indeed-scraper`).
 
 ## 7. Future Scope
 

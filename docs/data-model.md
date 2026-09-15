@@ -11,6 +11,7 @@ All relational data lives in **Cloudflare D1** (SQLite). Binary/document storage
 |---|---|---|
 | `id` | TEXT PK | ULID |
 | `email` | TEXT UNIQUE NOT NULL | |
+| `password_hash` | TEXT NOT NULL | bcrypt hash |
 | `created_at` | INTEGER NOT NULL | Unix ms |
 | `updated_at` | INTEGER NOT NULL | Unix ms |
 
@@ -46,7 +47,7 @@ Canonical normalized job listing.
 | Column | Type | Notes |
 |---|---|---|
 | `id` | TEXT PK | ULID |
-| `source_name` | TEXT NOT NULL | e.g. `linkedin`, `greenhouse`, `user` |
+| `source_name` | TEXT NOT NULL | e.g. `adzuna`, `apify_indeed`, `remotive`, `user` |
 | `source_job_id` | TEXT | Provider's own job ID |
 | `source_url` | TEXT NOT NULL | Original listing URL |
 | `title` | TEXT NOT NULL | |
@@ -129,6 +130,24 @@ Immutable timeline of application state changes and notes.
 | `event_type` | TEXT NOT NULL | `status_change`, `note`, `reminder` |
 | `payload` | TEXT | JSON — status transition, note text, etc. |
 | `occurred_at` | INTEGER NOT NULL | Unix ms |
+
+---
+
+### `subscriptions`
+One row per user (UNIQUE on `user_id`). Created when an admin grants premium access.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | TEXT PK | ULID |
+| `user_id` | TEXT NOT NULL UNIQUE FK → users | |
+| `plan` | TEXT NOT NULL | `'premium'` only |
+| `status` | TEXT NOT NULL | `active` \| `cancelled` \| `expired` |
+| `started_at` | INTEGER NOT NULL | Unix ms |
+| `expires_at` | INTEGER | Unix ms, nullable (no expiry = indefinite) |
+| `created_at` | INTEGER NOT NULL | Unix ms |
+| `updated_at` | INTEGER NOT NULL | Unix ms |
+
+Indexes: `(user_id)`, `(status, expires_at)`.
 
 ---
 

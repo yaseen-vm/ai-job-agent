@@ -63,7 +63,7 @@ Update profile fields. Partial update — only send changed fields.
 **Response `200`** — updated profile object.
 
 ### `POST /profile/resume`
-Upload a resume file. Triggers AI extraction agent via Queue.
+Upload a resume file. Triggers AI extraction agent asynchronously via `waitUntil`.
 
 **Request** — `multipart/form-data`, field `file` (PDF or DOCX, max 10 MB).
 
@@ -73,12 +73,9 @@ Upload a resume file. Triggers AI extraction agent via Queue.
 ```
 
 ### `GET /profile/resume`
-Return a short-lived pre-signed URL to download the stored resume.
+Stream the stored resume file directly. The Worker reads from R2 and proxies the bytes — no pre-signed URL is generated.
 
-**Response `200`**
-```json
-{ "url": "https://...", "expires_at": 1720003600000 }
-```
+**Response `200`** — raw file bytes with appropriate `Content-Type` header.
 
 ---
 
@@ -187,18 +184,18 @@ Add a note or manual event.
 ## Agents
 
 ### `POST /agents/match`
-Queue a match-score computation for a specific job against the current user's profile.
+Trigger a match-score computation for a specific job against the current user's profile (runs async via `waitUntil`).
 
 **Request** `{ "job_id": "..." }`
 **Response `202`** `{ "agent_run_id": "..." }`
 
 ### `POST /agents/rank`
-Queue a ranking run across all saved jobs for the current user.
+Trigger a ranking run across all saved jobs for the current user (async via `waitUntil`).
 
 **Response `202`** `{ "agent_run_id": "..." }`
 
 ### `POST /agents/draft`
-Queue an application content draft for a job.
+Trigger an application content draft for a job (async via `waitUntil`).
 
 **Request** `{ "job_id": "...", "type": "cover_letter" | "summary" }`
 **Response `202`** `{ "agent_run_id": "..." }`
@@ -217,6 +214,77 @@ Poll the status and result of an agent run.
   "completed_at": ...
 }
 ```
+
+---
+
+## Subscriptions
+
+### `GET /subscriptions/me`
+Return the current user's subscription record.
+
+**Response `200`** `{ "id": "...", "plan": "premium", "status": "active", "expires_at": ... }` — `404` if no subscription.
+
+### `DELETE /subscriptions/me`
+Cancel the current user's subscription (sets `status: 'cancelled'`).
+
+**Response `200`** — updated subscription object.
+
+---
+
+## Premium
+
+### `GET /premium/status`
+Return the current user's premium/subscription status.
+
+**Response `200`** `{ "isPremium": true, "subscription": { ... } }`
+
+### `POST /premium/search`
+Dispatch an Apify Indeed search for the given query (premium users only). Returns run IDs for polling.
+
+**Request** `{ "query": "...", "location": "...", "count": 50 }`
+
+**Response `202`** `{ "runIds": ["..."], "terms": ["..."], "status": "pending" }`
+
+### `GET /premium/search/poll`
+Poll the status of Apify actor runs.
+
+**Query params:** `runIds` (comma-separated).
+
+**Response `200`** `{ "status": "completed" | "running" | "failed", "jobs": [...] }`
+
+---
+
+## Admin
+
+All admin endpoints require the requesting user to have `role = 'admin'` (checked server-side).
+
+### `GET /admin/users`
+List users with their subscription status.
+
+**Query params:** `search` (optional email/name filter).
+
+### `POST /admin/ingest`
+Trigger a manual job ingestion run (Adzuna + other configured adapters).
+
+**Response `200`** `{ "inserted": 42 }`
+
+### `GET /admin/subscriptions/:userId`
+Get subscription record for a specific user.
+
+### `POST /admin/subscriptions`
+Grant or renew a premium subscription for a user.
+
+**Request** `{ "userId": "...", "expiresAt": 1720000000000 }`
+
+### `DELETE /admin/subscriptions/:userId`
+Revoke a user's subscription immediately.
+
+---
+
+## Utility
+
+### `GET /health` — public
+Health check. Returns `200 { "status": "ok" }`.
 
 ---
 
