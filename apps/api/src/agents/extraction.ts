@@ -1,5 +1,6 @@
 import { createBedrockClient } from '../lib/bedrock.ts';
 import { ulid } from '../lib/ulid.ts';
+import { extractResumeText } from '../lib/resume-parser.ts';
 import type { Env } from '../types.ts';
 
 export async function runExtractionAgent(env: Env, agentRunId: string, userId: string, resumeR2Key: string) {
@@ -7,7 +8,8 @@ export async function runExtractionAgent(env: Env, agentRunId: string, userId: s
 
   const obj = await env.R2.get(resumeR2Key);
   if (!obj) throw new Error(`Resume not found: ${resumeR2Key}`);
-  const resumeText = new TextDecoder().decode(await obj.arrayBuffer()).slice(0, 8000);
+  const ext = resumeR2Key.split('.').pop()?.toLowerCase() ?? '';
+  const resumeText = await extractResumeText(await obj.arrayBuffer(), ext);
   toolCalls.push({ tool: 'read_resume', input: { key: resumeR2Key }, output: { length: resumeText.length } });
 
   const bedrock = createBedrockClient(env.AWS_ACCESS_KEY_ID, env.AWS_SECRET_ACCESS_KEY, env.AWS_REGION);
