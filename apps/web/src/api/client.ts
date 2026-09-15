@@ -113,6 +113,26 @@ export const api = {
     pollSearch: (runIds: string[]) => request<{ results: { runId: string; searchTerm?: string; status: string; count?: number }[]; allDone: boolean; totalNew: number }>(`/premium/search/poll?runIds=${runIds.join(',')}`),
   },
 
+  resume: {
+    tailor: (jobId: string) =>
+      request<{ id: string; status: string }>('/resume/tailor', { method: 'POST', body: JSON.stringify({ job_id: jobId }) }),
+    getTailored: (jobId: string) =>
+      request<{
+        id: string; status: string; error?: string;
+        resume_data: {
+          contact: { name: string; email: string; phone: string; location: string; linkedin: string };
+          summary: string;
+          experience: { title: string; company: string; location: string; start_date: string; end_date: string; bullets: string[] }[];
+          education: { degree: string; school: string; year: string }[];
+          skills: string[];
+          certifications: string[];
+        } | null;
+        apply_fields: { label: string; value: string; hint: string }[] | null;
+      }>(`/resume/tailored/${jobId}`),
+    deleteTailored: (jobId: string) =>
+      request<{ ok: boolean }>(`/resume/tailored/${jobId}`, { method: 'DELETE' }),
+  },
+
   agents: {
     match: (jobId: string) =>
       request<{ agent_run_id: string }>('/agents/match', { method: 'POST', body: JSON.stringify({ job_id: jobId }) }),

@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
-import { Star, MapPin, Briefcase, DollarSign, Clock, Zap } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Star, MapPin, Briefcase, DollarSign, Clock, Zap, FileText } from 'lucide-react';
 
 interface Job {
   id: string;
@@ -25,6 +25,7 @@ export function JobCard({ job, saved, onSave, onUnsave, matchScore, matchLoading
   matchError?: boolean;
   onComputeMatch?: (id: string) => void;
 }) {
+  const navigate = useNavigate();
   const salary = job.min_salary || job.max_salary
     ? `${job.salary_currency ?? '$'}${job.min_salary ? (job.min_salary / 1000).toFixed(0) + 'k' : ''}${job.max_salary ? '-' + (job.max_salary / 1000).toFixed(0) + 'k' : ''}`
     : null;
@@ -66,6 +67,16 @@ export function JobCard({ job, saved, onSave, onUnsave, matchScore, matchLoading
               Match
             </button>
           ) : null}
+          {matchScore !== undefined && matchScore >= 0.70 && (
+            <button
+              onClick={() => navigate(`/resume-editor/${job.id}`)}
+              className="flex items-center gap-1 text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 px-3 py-1 rounded-full transition-colors whitespace-nowrap shadow-sm"
+              title="Tailor your resume for this job and apply"
+            >
+              <FileText size={12} />
+              Tailor &amp; Apply
+            </button>
+          )}
           <button
             onClick={() => saved ? onUnsave?.(job.id) : onSave?.(job.id)}
             className={`p-1.5 rounded-full transition-colors ${saved ? 'bg-yellow-100 text-yellow-600' : 'bg-gray-100 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'}`}

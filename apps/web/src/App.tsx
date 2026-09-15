@@ -11,6 +11,8 @@ import { SavedJobs } from './pages/SavedJobs.tsx';
 import { Applications } from './pages/Applications.tsx';
 import { Landing } from './pages/Landing.tsx';
 import { Admin } from './pages/Admin.tsx';
+import { ResumeEditor } from './pages/ResumeEditor.tsx';
+import { ApplyScreen } from './pages/ApplyScreen.tsx';
 import { PageLoader } from './components/PageLoader.tsx';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -55,6 +57,8 @@ export function App() {
                   <Route path="/saved" element={<SavedJobs />} />
                   <Route path="/applications" element={<Applications />} />
                   <Route path="/profile" element={<Profile />} />
+                  <Route path="/resume-editor/:id" element={<ResumeEditor />} />
+                  <Route path="/apply/:id" element={<ApplyScreen />} />
                   <Route path="/admin" element={
                     <RequireAdmin>
                       <Admin />
