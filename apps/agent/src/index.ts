@@ -14,9 +14,9 @@ interface AgentMessage {
 }
 
 export default {
-  async queue(batch: MessageBatch<AgentMessage>, env: AgentEnv): Promise<void> {
+  async queue(batch: MessageBatch<unknown>, env: AgentEnv): Promise<void> {
     for (const msg of batch.messages) {
-      const { type, agent_run_id, user_id } = msg.body;
+      const { type, agent_run_id, user_id } = msg.body as AgentMessage;
 
       // Mark run as running
       await env.DB
@@ -25,21 +25,22 @@ export default {
         .run();
 
       try {
+        const m = msg.body as AgentMessage;
         switch (type) {
           case 'extraction':
-            if (!msg.body.resume_r2_key) throw new Error('Missing resume_r2_key');
-            await runExtractionAgent(env, agent_run_id, user_id, msg.body.resume_r2_key);
+            if (!m.resume_r2_key) throw new Error('Missing resume_r2_key');
+            await runExtractionAgent(env, agent_run_id, user_id, m.resume_r2_key);
             break;
           case 'matching':
-            if (!msg.body.job_id) throw new Error('Missing job_id');
-            await runMatchingAgent(env, agent_run_id, user_id, msg.body.job_id);
+            if (!m.job_id) throw new Error('Missing job_id');
+            await runMatchingAgent(env, agent_run_id, user_id, m.job_id);
             break;
           case 'ranking':
             await runRankingAgent(env, agent_run_id, user_id);
             break;
           case 'draft':
-            if (!msg.body.job_id || !msg.body.draft_type) throw new Error('Missing job_id or draft_type');
-            await runDraftAgent(env, agent_run_id, user_id, msg.body.job_id, msg.body.draft_type);
+            if (!m.job_id || !m.draft_type) throw new Error('Missing job_id or draft_type');
+            await runDraftAgent(env, agent_run_id, user_id, m.job_id, m.draft_type);
             break;
           default:
             throw new Error(`Unknown agent type: ${type}`);

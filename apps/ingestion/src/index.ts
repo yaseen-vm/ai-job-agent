@@ -3,7 +3,7 @@ import { fetchRemotiveJobs, normalizeRemotiveJob } from './adapters/remotive.ts'
 import type { IngestionEnv } from './types.ts';
 
 export default {
-  async scheduled(_event: ScheduledEvent, env: IngestionEnv): Promise<void> {
+  async scheduled(_controller: ScheduledController, env: IngestionEnv): Promise<void> {
     await ingestRemotive(env);
   },
 } satisfies ExportedHandler<IngestionEnv>;

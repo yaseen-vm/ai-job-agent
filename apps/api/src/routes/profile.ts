@@ -78,9 +78,10 @@ profileRouter.patch('/', async (c) => {
 profileRouter.post('/resume', async (c) => {
   const userId = c.get('userId');
   const formData = await c.req.formData();
-  const file = formData.get('file');
+  const rawFile = formData.get('file');
+  if (!rawFile || typeof (rawFile as unknown as File).arrayBuffer !== 'function') return errValidation(c, 'file is required');
+  const file = rawFile as unknown as File;
 
-  if (!file || !(file instanceof File)) return errValidation(c, 'file is required');
   if (file.size > 10 * 1024 * 1024) return errValidation(c, 'file must be under 10 MB');
 
   const ext = file.name.split('.').pop()?.toLowerCase();

@@ -34,7 +34,7 @@ app.route('/agents', agentsRouter);
 app.get('/health', (c) => c.json({ status: 'ok' }));
 
 app.post('/admin/ingest', async (c) => {
-  const body = await c.req.json<{ keyword?: string; clear?: boolean }>().catch(() => ({}));
+  const body = await c.req.json<{ keyword?: string; clear?: boolean }>().catch(() => ({ keyword: undefined, clear: false }));
   if (body.clear) {
     await c.env.DB.prepare('DELETE FROM jobs').run();
   }
