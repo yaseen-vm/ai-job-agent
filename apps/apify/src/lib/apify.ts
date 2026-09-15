@@ -3,7 +3,7 @@
 // Docs: https://apify.com/apify/indeed-scraper
 
 const APIFY_BASE = 'https://api.apify.com/v2';
-const ACTOR_ID = 'apify~indeed-scraper';
+const ACTOR_ID = 'borderline~indeed-scraper';
 
 export interface ActorInput {
   position: string;

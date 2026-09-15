@@ -5,7 +5,7 @@ import { ulid } from '../lib/ulid.ts';
 import type { Env } from '../types.ts';
 
 const APIFY_BASE = 'https://api.apify.com/v2';
-const ACTOR_ID = 'apify~indeed-scraper';
+const ACTOR_ID = 'borderline~indeed-scraper';
 
 export const premiumRouter = new Hono<{ Bindings: Env; Variables: { userId: string } }>();
 
