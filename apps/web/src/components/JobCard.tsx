@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Star, MapPin, Briefcase, DollarSign, Clock, Zap } from 'lucide-react';
+import { Zap } from 'lucide-react';
 
 interface Job {
   id: string;
@@ -33,68 +33,60 @@ export function JobCard({ job, saved, onSave, onUnsave, matchScore, matchLoading
     : null;
 
   return (
-    <div className="bg-white/70 backdrop-blur-sm rounded-3xl border border-white/60 p-5 hover:bg-white hover:shadow-lg transition-all duration-300">
-      <div className="flex justify-between items-start gap-4">
+    <div className="group border border-line bg-paper hover:bg-ink hover:text-paper transition-all duration-500 flex flex-col justify-between h-full p-6">
+      <div className="flex justify-between items-start gap-4 mb-12">
         <div className="flex-1 min-w-0">
-          <Link to={`/jobs/${job.id}`} className="text-lg font-semibold text-gray-900 hover:text-blue-600 truncate block transition-colors">
-            {job.title}
+          <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500 group-hover:text-gray-400 mb-2">{job.company}</p>
+          <Link to={`/jobs/${job.id}`} className="block">
+            <h3 className="font-serif text-[clamp(24px,3vw,36px)] leading-tight tracking-tight mb-2 group-hover:text-acid transition-colors">
+              {job.title}
+            </h3>
           </Link>
-          <div className="text-sm font-medium text-gray-500 mt-1">{job.company}</div>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex flex-col items-end gap-3 shrink-0">
+          <button
+            onClick={() => saved ? onUnsave?.(job.id) : onSave?.(job.id)}
+            className={`font-mono text-[10px] uppercase tracking-widest border pb-0.5 transition-colors ${
+              saved 
+                ? 'border-acid text-acid hover:text-red-400 hover:border-red-400' 
+                : 'border-transparent text-gray-400 hover:text-ink hover:border-ink group-hover:hover:text-acid group-hover:hover:border-acid group-hover:text-white'
+            }`}
+          >
+            {saved ? '[ Saved ]' : '[ Save ]'}
+          </button>
+          
           {matchScore !== undefined ? (
-            <span className={`text-xs font-bold px-3 py-1 rounded-full ${scoreColor(matchScore)}`}>
+            <span className="font-mono text-[10px] uppercase tracking-widest bg-acid text-ink px-2 py-1">
               {Math.round(matchScore * 100)}% Match
             </span>
           ) : matchLoading ? (
-            <span className="text-xs font-medium text-gray-400 bg-gray-100 px-3 py-1 rounded-full">Computing...</span>
+            <span className="font-mono text-[10px] uppercase tracking-widest text-gray-400 animate-pulse">
+              Computing...
+            </span>
           ) : onComputeMatch ? (
             <button
               onClick={() => onComputeMatch(job.id)}
-              className="flex items-center gap-1 text-xs font-medium bg-[#f0ece1] text-gray-800 hover:bg-[#e4dfd3] px-3 py-1 rounded-full transition-colors whitespace-nowrap"
+              className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-widest border border-line px-2 py-1 hover:bg-acid hover:text-ink hover:border-acid transition-colors group-hover:border-gray-700"
             >
-              <Zap size={12} className="text-yellow-500" />
-              Match
+              <Zap size={10} /> Match
             </button>
           ) : null}
-          <button
-            onClick={() => saved ? onUnsave?.(job.id) : onSave?.(job.id)}
-            className={`p-1.5 rounded-full transition-colors ${saved ? 'bg-yellow-100 text-yellow-600' : 'bg-gray-100 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'}`}
-          >
-            <Star size={16} fill={saved ? 'currentColor' : 'none'} strokeWidth={saved ? 0 : 2} />
-          </button>
         </div>
       </div>
       
-      <div className="flex flex-wrap items-center gap-2 mt-4">
-        {job.remote && <Tag icon={<MapPin size={12} />}>{job.remote}</Tag>}
-        {job.location && <Tag icon={<MapPin size={12} />}>{job.location}</Tag>}
-        {job.employment_type && <Tag icon={<Briefcase size={12} />}>{job.employment_type.replace('_', ' ')}</Tag>}
-        {salary && <Tag icon={<DollarSign size={12} />}>{salary}</Tag>}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[10px] uppercase tracking-widest text-gray-500 group-hover:text-gray-400 pt-4 border-t border-line group-hover:border-gray-800">
+        {job.remote && <span>/ {job.remote}</span>}
+        {job.location && <span>/ {job.location}</span>}
+        {job.employment_type && <span>/ {job.employment_type.replace('_', ' ')}</span>}
+        {salary && <span>/ {salary}</span>}
         {postedAgo && (
-          <span className="flex items-center gap-1 text-xs font-medium text-gray-400 ml-auto">
-            <Clock size={12} />
+          <span className="ml-auto text-ink group-hover:text-acid">
             {postedAgo}
           </span>
         )}
       </div>
     </div>
   );
-}
-
-function Tag({ children, icon }: { children: React.ReactNode; icon?: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1 text-xs font-medium bg-white border border-gray-100 text-gray-600 px-2.5 py-1 rounded-full shadow-sm">
-      {icon && <span className="text-gray-400">{icon}</span>}
-      <span className="capitalize">{children}</span>
-    </span>
-  );
-}
-
-function scoreColor(score: number) {
-  if (score >= 0.75) return 'bg-[#dcfce7] text-[#166534] border border-[#bbf7d0]';
-  if (score >= 0.5) return 'bg-[#fef9c3] text-[#854d0e] border border-[#fef08a]';
-  return 'bg-gray-100 text-gray-600 border border-gray-200';
 }
 
 function formatAgo(ms: number): string {

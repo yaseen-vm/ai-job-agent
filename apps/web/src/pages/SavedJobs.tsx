@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api/client.ts';
 import { JobCard } from '../components/JobCard.tsx';
-import { Sparkles, Bookmark } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 export function SavedJobs() {
   const [savedJobs, setSavedJobs] = useState<Array<Record<string, unknown>>>([]);
@@ -40,44 +40,39 @@ export function SavedJobs() {
   };
 
   if (loading) return (
-    <div className="flex justify-center items-center py-12">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+    <div className="py-12 border-t border-line font-mono text-[10px] uppercase tracking-widest animate-pulse">
+      Loading Data...
     </div>
   );
 
   return (
-    <div className="space-y-8">
-      <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 shadow-sm border border-white/50 flex flex-col md:flex-row justify-between items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="bg-yellow-100 text-yellow-600 p-3 rounded-full">
-            <Bookmark size={24} />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Saved Jobs</h1>
-            <p className="text-sm font-medium text-gray-500">{savedJobs.length} jobs saved</p>
-          </div>
+    <div className="space-y-16">
+      <div className="border-b border-line pb-8 flex flex-col md:flex-row justify-between items-end gap-6">
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500 mb-6">Collection / 02</p>
+          <h1 className="font-serif text-[clamp(60px,8vw,120px)] leading-[0.8] tracking-tight m-0">SAVED<br/><em className="italic font-normal">OPPORTUNITIES</em></h1>
+          <p className="font-mono text-[10px] uppercase tracking-widest mt-6">{savedJobs.length} records</p>
         </div>
         
         {savedJobs.length > 0 && (
           <button
             onClick={handleRank}
             disabled={ranking}
-            className="flex items-center gap-2 text-sm font-medium bg-[#2c2d30] text-white px-6 py-3 rounded-full hover:bg-black disabled:opacity-50 transition-all shadow-md"
+            className="font-mono text-[10px] uppercase tracking-widest bg-ink text-paper px-6 py-4 hover:bg-acid hover:text-ink transition-colors disabled:opacity-50 flex items-center gap-2"
           >
-            <Sparkles size={16} className={ranking ? 'animate-pulse text-yellow-400' : 'text-yellow-400'} />
-            {ranking ? 'Ranking...' : 'Rank by fit'}
+            <Sparkles size={12} className={ranking ? 'animate-pulse' : ''} />
+            {ranking ? 'Ranking...' : 'Rank by fit →'}
           </button>
         )}
       </div>
 
       {savedJobs.length === 0 ? (
-        <div className="bg-white/50 backdrop-blur-sm rounded-[2rem] border border-white/50 py-16 flex flex-col items-center justify-center text-gray-400">
-          <Bookmark size={48} className="mb-4 text-gray-300" />
-          <p className="text-lg font-medium text-gray-500">No saved jobs yet</p>
-          <p className="text-sm">Browse jobs and click the star icon to save them.</p>
+        <div className="py-24 border border-line flex flex-col items-center justify-center">
+          <p className="font-serif text-4xl mb-4 italic">Empty state.</p>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500">You haven't saved any jobs yet.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-line border border-line">
           {savedJobs
             .slice()
             .sort((a, b) => ((b.score as number) ?? 0) - ((a.score as number) ?? 0))

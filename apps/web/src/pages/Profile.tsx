@@ -65,7 +65,6 @@ export function Profile() {
     try {
       const res = await api.profile.uploadResume(file);
       setUploadStatus(`Uploaded. Extracting profile (run ${res.agent_run_id})…`);
-      // Poll for completion
       const interval = setInterval(async () => {
         try {
           const run = await api.agents.getRun(res.agent_run_id);
@@ -99,81 +98,102 @@ export function Profile() {
     }
   };
 
-  if (!profile) return <div className="text-gray-500">Loading…</div>;
+  if (!profile) return (
+    <div className="py-12 border-t border-line font-mono text-[10px] uppercase tracking-widest animate-pulse">
+      Loading Profile...
+    </div>
+  );
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="text-2xl font-semibold text-gray-900 mb-6">Profile</h1>
+    <div className="space-y-16 max-w-4xl">
+      <div className="border-b border-line pb-8 flex flex-col md:flex-row justify-between items-end gap-6">
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500 mb-6">User / 04</p>
+          <h1 className="font-serif text-[clamp(60px,8vw,120px)] leading-[0.8] tracking-tight m-0">PROFILE<br/><em className="italic font-normal">DATA</em></h1>
+        </div>
+      </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 className="font-medium text-gray-900 mb-3">Resume</h2>
-        <div className="flex items-center gap-3">
+      <div className="border border-line p-8 relative overflow-hidden group">
+        <div className="absolute inset-0 bg-acid/10 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-700 pointer-events-none"></div>
+        <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500 mb-6">CV Document</p>
+        <div className="flex flex-wrap items-center gap-6 relative z-10">
           <button
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
-            className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+            className="font-mono text-[10px] uppercase tracking-widest bg-ink text-paper px-6 py-4 hover:bg-acid hover:text-ink transition-colors disabled:opacity-50 flex items-center gap-2"
           >
-            {uploading ? 'Uploading…' : 'Upload PDF or DOCX'}
+            {uploading ? 'UPLOADING...' : 'UPLOAD PDF OR DOCX'}
           </button>
-          {!!profile.resume_r2_key && <span className="text-sm text-green-600">Resume on file</span>}
+          {!!profile.resume_r2_key && <span className="font-mono text-[10px] uppercase tracking-widest text-acid bg-ink px-3 py-1">Resume on file</span>}
         </div>
-        {uploadStatus && <p className="text-sm text-gray-500 mt-2">{uploadStatus}</p>}
+        {uploadStatus && <p className="font-mono text-[10px] uppercase tracking-widest text-gray-500 mt-4 relative z-10">{uploadStatus}</p>}
         <input ref={fileRef} type="file" accept=".pdf,.docx" className="hidden" onChange={handleResumeUpload} />
       </div>
 
-      <form onSubmit={handleSave} className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
-        <h2 className="font-medium text-gray-900">Details</h2>
+      <form onSubmit={handleSave} className="space-y-12 pb-24">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+          <Field label="Full name">
+            <input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} className={inputCls} />
+          </Field>
+          <Field label="Headline">
+            <input value={form.headline} onChange={e => setForm(f => ({ ...f, headline: e.target.value }))} className={inputCls} placeholder="Senior Backend Engineer" />
+          </Field>
+          
+          <div className="md:col-span-2">
+            <Field label="Summary">
+              <textarea value={form.summary} onChange={e => setForm(f => ({ ...f, summary: e.target.value }))} className={inputCls + ' min-h-[120px] resize-y py-4'} />
+            </Field>
+          </div>
 
-        <Field label="Full name">
-          <input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} className={inputCls} />
-        </Field>
-        <Field label="Headline (e.g. Senior Backend Engineer)">
-          <input value={form.headline} onChange={e => setForm(f => ({ ...f, headline: e.target.value }))} className={inputCls} />
-        </Field>
-        <Field label="Summary">
-          <textarea value={form.summary} onChange={e => setForm(f => ({ ...f, summary: e.target.value }))} className={inputCls + ' h-24 resize-none'} />
-        </Field>
-        <Field label="Years of experience">
-          <input type="number" value={form.years_experience} onChange={e => setForm(f => ({ ...f, years_experience: e.target.value }))} className={inputCls} min={0} />
-        </Field>
-        <Field label="Skills (comma-separated)">
-          <input value={form.skills} onChange={e => setForm(f => ({ ...f, skills: e.target.value }))} className={inputCls} placeholder="TypeScript, React, Node.js" />
-        </Field>
-        <Field label="Preferred roles (comma-separated)">
-          <input value={form.preferred_roles} onChange={e => setForm(f => ({ ...f, preferred_roles: e.target.value }))} className={inputCls} placeholder="Backend Engineer, Platform Engineer" />
-        </Field>
-        <Field label="Preferred locations (comma-separated)">
-          <input value={form.preferred_locations} onChange={e => setForm(f => ({ ...f, preferred_locations: e.target.value }))} className={inputCls} placeholder="London, Remote" />
-        </Field>
-        <Field label="Remote preference">
-          <select value={form.remote_preference} onChange={e => setForm(f => ({ ...f, remote_preference: e.target.value }))} className={inputCls}>
-            <option value="">Any</option>
-            <option value="remote">Remote</option>
-            <option value="hybrid">Hybrid</option>
-            <option value="onsite">Onsite</option>
-          </select>
-        </Field>
-        <Field label="Minimum salary (annual)">
-          <input type="number" value={form.min_salary} onChange={e => setForm(f => ({ ...f, min_salary: e.target.value }))} className={inputCls} min={0} />
-        </Field>
-        <Field label="Employment types (comma-separated: full_time, contract, part_time)">
-          <input value={form.employment_types} onChange={e => setForm(f => ({ ...f, employment_types: e.target.value }))} className={inputCls} placeholder="full_time" />
-        </Field>
+          <Field label="Years of experience">
+            <input type="number" value={form.years_experience} onChange={e => setForm(f => ({ ...f, years_experience: e.target.value }))} className={inputCls} min={0} />
+          </Field>
+          <Field label="Minimum salary (annual)">
+            <input type="number" value={form.min_salary} onChange={e => setForm(f => ({ ...f, min_salary: e.target.value }))} className={inputCls} min={0} />
+          </Field>
 
-        <button type="submit" disabled={saving} className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
-          {saving ? 'Saving…' : 'Save profile'}
-        </button>
+          <Field label="Remote preference">
+            <select value={form.remote_preference} onChange={e => setForm(f => ({ ...f, remote_preference: e.target.value }))} className={inputCls}>
+              <option value="">Any</option>
+              <option value="remote">Remote</option>
+              <option value="hybrid">Hybrid</option>
+              <option value="onsite">Onsite</option>
+            </select>
+          </Field>
+          <Field label="Employment types">
+            <input value={form.employment_types} onChange={e => setForm(f => ({ ...f, employment_types: e.target.value }))} className={inputCls} placeholder="full_time, contract" />
+          </Field>
+
+          <div className="md:col-span-2">
+            <Field label="Skills (comma-separated)">
+              <input value={form.skills} onChange={e => setForm(f => ({ ...f, skills: e.target.value }))} className={inputCls} placeholder="TypeScript, React, Node.js" />
+            </Field>
+          </div>
+          
+          <Field label="Preferred roles">
+            <input value={form.preferred_roles} onChange={e => setForm(f => ({ ...f, preferred_roles: e.target.value }))} className={inputCls} placeholder="Backend Engineer" />
+          </Field>
+          <Field label="Preferred locations">
+            <input value={form.preferred_locations} onChange={e => setForm(f => ({ ...f, preferred_locations: e.target.value }))} className={inputCls} placeholder="London, Remote" />
+          </Field>
+        </div>
+
+        <div className="border-t border-line pt-8 flex justify-end">
+          <button type="submit" disabled={saving} className="font-mono text-[10px] uppercase tracking-widest bg-ink text-paper px-8 py-4 hover:bg-acid hover:text-ink transition-colors disabled:opacity-50">
+            {saving ? 'SAVING...' : 'SAVE PROFILE →'}
+          </button>
+        </div>
       </form>
     </div>
   );
 }
 
-const inputCls = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
+const inputCls = 'w-full bg-transparent border-b border-line px-0 py-3 font-sans text-lg focus:outline-none focus:border-ink transition-colors rounded-none placeholder:text-gray-400';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+    <div className="flex flex-col gap-2">
+      <label className="font-mono text-[10px] uppercase tracking-widest text-gray-500">{label}</label>
       {children}
     </div>
   );
