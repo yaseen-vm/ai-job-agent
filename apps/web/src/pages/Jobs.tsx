@@ -4,6 +4,7 @@ import { JobCard } from '../components/JobCard.tsx';
 import { useSubscription } from '../hooks/useSubscription.ts';
 import { useAuthStore } from '../stores/auth.ts';
 import { Search, MapPin, Filter, Database, Briefcase, Bookmark, Zap, Crown, Sparkles, Lock, CheckCircle, AlertCircle, UserCircle } from 'lucide-react';
+import { JobsPageSkeleton } from '../components/PageLoader.tsx';
 
 interface Job {
   id: string;
@@ -21,7 +22,8 @@ interface Job {
 export function Jobs() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [offset, setOffset] = useState(0);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [savedMap, setSavedMap] = useState<Map<string, string>>(new Map()); // job_id -> saved_job id
@@ -72,6 +74,7 @@ export function Jobs() {
       setOffset(newOffset);
     } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
   }, [q, location, remote, type]);
 
@@ -188,6 +191,8 @@ export function Jobs() {
       setIngestMsg('Ingestion failed.'); setIngesting(false);
     }
   };
+
+  if (initialLoad) return <JobsPageSkeleton />;
 
   return (
     <div className="space-y-8">

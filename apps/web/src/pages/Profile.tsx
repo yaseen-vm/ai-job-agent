@@ -5,6 +5,7 @@ import {
   User, FileText, Briefcase, MapPin, DollarSign, Zap,
   Upload, CheckCircle, Loader, Crown, Save, ChevronDown,
 } from 'lucide-react';
+import { ProfilePageSkeleton } from '../components/PageLoader.tsx';
 
 const inputCls = 'w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2c2d30]/20 transition-shadow';
 const labelCls = 'block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5';
@@ -133,11 +134,7 @@ export function Profile() {
     }
   };
 
-  if (!profile) return (
-    <div className="flex items-center justify-center py-24 text-gray-400">
-      <Loader className="animate-spin mr-2" size={20} /> Loading profile…
-    </div>
-  );
+  if (!profile) return <ProfilePageSkeleton />;
 
   const initials = form.full_name
     ? form.full_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../api/client.ts';
 import { JobCard } from '../components/JobCard.tsx';
 import { Sparkles, Bookmark } from 'lucide-react';
+import { GenericPageSkeleton } from '../components/PageLoader.tsx';
 
 export function SavedJobs() {
   const [savedJobs, setSavedJobs] = useState<Array<Record<string, unknown>>>([]);
@@ -39,11 +40,7 @@ export function SavedJobs() {
     }
   };
 
-  if (loading) return (
-    <div className="flex justify-center items-center py-12">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-    </div>
-  );
+  if (loading) return <GenericPageSkeleton rows={4} />;
 
   return (
     <div className="space-y-8">

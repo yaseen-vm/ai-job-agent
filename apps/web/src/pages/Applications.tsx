@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client.ts';
+import { GenericPageSkeleton } from '../components/PageLoader.tsx';
 
 const STATUSES = ['saved', 'preparing', 'applied', 'interviewing', 'offer', 'rejected', 'withdrawn'] as const;
 type Status = (typeof STATUSES)[number];
@@ -44,7 +45,7 @@ export function Applications() {
     setTimeline({ appId, events: res.events });
   };
 
-  if (loading) return <div className="text-gray-400">Loading…</div>;
+  if (loading) return <GenericPageSkeleton rows={5} />;
 
   const filtered = statusFilter ? apps.filter(a => a.status === statusFilter) : apps;
 

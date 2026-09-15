@@ -1,3 +1,4 @@
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/auth.ts';
 import { Layout } from './components/Layout.tsx';
@@ -10,6 +11,7 @@ import { SavedJobs } from './pages/SavedJobs.tsx';
 import { Applications } from './pages/Applications.tsx';
 import { Landing } from './pages/Landing.tsx';
 import { Admin } from './pages/Admin.tsx';
+import { PageLoader } from './components/PageLoader.tsx';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { token } = useAuthStore();
@@ -25,6 +27,17 @@ function RequireAdmin({ children }: { children: React.ReactNode }) {
 }
 
 export function App() {
+  const { token } = useAuthStore();
+  const [booting, setBooting] = React.useState(true);
+
+  React.useEffect(() => {
+    // Brief boot delay so fonts/styles settle before revealing content
+    const t = setTimeout(() => setBooting(false), 600);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (booting) return <PageLoader />;
+
   return (
     <BrowserRouter>
       <Routes>
