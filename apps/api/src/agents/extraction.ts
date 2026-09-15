@@ -2,7 +2,7 @@ import { ulid } from '../lib/ulid.ts';
 import { extractResumeText } from '../lib/resume-parser.ts';
 import type { Env } from '../types.ts';
 
-const EXTRACTION_MODEL = '@cf/meta/llama-3.1-8b-instruct';
+const EXTRACTION_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 
 export async function runExtractionAgent(env: Env, agentRunId: string, userId: string, resumeR2Key: string) {
   const toolCalls: unknown[] = [];
