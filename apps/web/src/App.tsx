@@ -8,6 +8,7 @@ import { Jobs } from './pages/Jobs.tsx';
 import { JobDetail } from './pages/JobDetail.tsx';
 import { SavedJobs } from './pages/SavedJobs.tsx';
 import { Applications } from './pages/Applications.tsx';
+import { Landing } from './pages/Landing.tsx';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { token } = useAuthStore();
@@ -19,6 +20,7 @@ export function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route
@@ -27,12 +29,12 @@ export function App() {
             <RequireAuth>
               <Layout>
                 <Routes>
-                  <Route index element={<Navigate to="/jobs" replace />} />
                   <Route path="/jobs" element={<Jobs />} />
                   <Route path="/jobs/:id" element={<JobDetail />} />
                   <Route path="/saved" element={<SavedJobs />} />
                   <Route path="/applications" element={<Applications />} />
                   <Route path="/profile" element={<Profile />} />
+                  <Route path="*" element={<Navigate to="/jobs" replace />} />
                 </Routes>
               </Layout>
             </RequireAuth>
