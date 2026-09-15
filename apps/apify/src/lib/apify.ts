@@ -19,18 +19,23 @@ export interface ApifyRunMeta {
 }
 
 export interface IndeedJob {
-  id?: string;
   jobKey?: string;
-  positionName: string;
-  company: string;
-  location: string;
-  salary?: string;
-  jobType?: string;
-  description?: string;
-  url: string;
-  postedAt?: string;
-  externalApplyLink?: string;
-  remoteType?: string;
+  title: string;
+  companyName: string;
+  location?: string;
+  jobType?: string[];
+  descriptionText?: string;
+  jobUrl: string;
+  datePublished?: string;
+  isRemote?: boolean;
+  salary?: {
+    salaryMin?: number;
+    salaryMax?: number;
+    salaryText?: string;
+    salaryCurrency?: string;
+  };
+  applyUrl?: string;
+  age?: string;
 }
 
 export async function startActorRun(

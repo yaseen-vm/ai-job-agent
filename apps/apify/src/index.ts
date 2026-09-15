@@ -204,28 +204,26 @@ function buildSearchTerms(user: SubscriberRow): string[] {
 }
 
 function normalizeIndeedJob(raw: import('./lib/apify.ts').IndeedJob): NormalizedJob {
-  const jobId = raw.jobKey ?? raw.id ?? raw.url;
-  const isRemote = /remote/i.test(
-    (raw.location ?? '') + ' ' + (raw.remoteType ?? '') + ' ' + (raw.jobType ?? ''),
-  );
-  const isHybrid = /hybrid/i.test((raw.location ?? '') + ' ' + (raw.remoteType ?? ''));
+  const jobId = raw.jobKey ?? raw.jobUrl;
+  const isRemote = raw.isRemote === true || /remote/i.test(raw.location ?? '');
+  const isHybrid = !isRemote && /hybrid/i.test(raw.location ?? '');
 
   return {
     source_name: 'apify_indeed',
     source_job_id: jobId,
-    source_url: raw.url,
-    title: raw.positionName,
-    company: raw.company,
+    source_url: raw.jobUrl,
+    title: raw.title,
+    company: raw.companyName,
     location: raw.location ?? null,
     remote: isRemote ? 'remote' : isHybrid ? 'hybrid' : 'onsite',
-    employment_type: mapJobType(raw.jobType),
-    description: raw.description ?? '',
+    employment_type: mapJobType(raw.jobType?.[0]),
+    description: raw.descriptionText ?? '',
     required_skills: [],
     preferred_skills: [],
-    min_salary: null,
-    max_salary: null,
-    salary_currency: null,
-    posted_at: raw.postedAt ? new Date(raw.postedAt).getTime() || null : null,
+    min_salary: raw.salary?.salaryMin ?? null,
+    max_salary: raw.salary?.salaryMax ?? null,
+    salary_currency: raw.salary?.salaryCurrency ?? null,
+    posted_at: raw.datePublished ? new Date(raw.datePublished).getTime() || null : null,
   };
 }
 

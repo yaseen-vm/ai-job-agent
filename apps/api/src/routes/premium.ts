@@ -54,7 +54,7 @@ premiumRouter.post('/search', async (c) => {
       const res = await fetch(`${APIFY_BASE}/acts/${ACTOR_ID}/runs?token=${c.env.APIFY_API_TOKEN}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: term, country: 'us', maxItems: 25, saveOnlyUniqueItems: true }),
+        body: JSON.stringify({ query: term, country: 'us', maxItems: 50, saveOnlyUniqueItems: true }),
       });
       if (!res.ok) { console.error(`Apify start failed for "${term}": ${res.status}`); continue; }
       const data = await res.json<{ data: { id: string } }>();
@@ -162,22 +162,35 @@ async function fetchDataset(token: string, datasetId: string): Promise<IndeedJob
 }
 
 interface IndeedJob {
-  id?: string; jobKey?: string; positionName: string; company: string;
-  location: string; salary?: string; jobType?: string; description?: string;
-  url: string; postedAt?: string; remoteType?: string;
+  jobKey?: string;
+  title: string;
+  companyName: string;
+  location?: string;
+  jobType?: string[];
+  descriptionText?: string;
+  jobUrl: string;
+  datePublished?: string;
+  isRemote?: boolean;
+  salary?: {
+    salaryMin?: number;
+    salaryMax?: number;
+    salaryText?: string;
+    salaryCurrency?: string;
+  };
+  applyUrl?: string;
 }
 
 async function insertJobs(env: Env, items: IndeedJob[]): Promise<number> {
   let count = 0;
   for (const item of items) {
     try {
-      const jobId = item.jobKey ?? item.id ?? item.url;
+      const jobId = item.jobKey ?? item.jobUrl;
       const existing = await env.DB.prepare('SELECT id FROM jobs WHERE source_name = ? AND source_job_id = ?')
         .bind('apify_indeed', jobId).first<{ id: string }>();
       if (existing) continue;
 
-      const isRemote = /remote/i.test((item.location ?? '') + ' ' + (item.remoteType ?? ''));
-      const isHybrid = /hybrid/i.test((item.location ?? '') + ' ' + (item.remoteType ?? ''));
+      const isRemote = item.isRemote === true || /remote/i.test(item.location ?? '');
+      const isHybrid = !isRemote && /hybrid/i.test(item.location ?? '');
       const id = ulid();
       const now = Date.now();
 
@@ -187,17 +200,20 @@ async function insertJobs(env: Env, items: IndeedJob[]): Promise<number> {
           min_salary,max_salary,salary_currency,posted_at,is_active,created_at,updated_at)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?)
       `).bind(
-        id, 'apify_indeed', jobId, item.url,
-        item.positionName, item.company, item.location ?? null,
+        id, 'apify_indeed', jobId, item.jobUrl,
+        item.title, item.companyName, item.location ?? null,
         isRemote ? 'remote' : isHybrid ? 'hybrid' : 'onsite',
-        mapJobType(item.jobType), item.description ?? '',
-        '[]', '[]', null, null, null,
-        item.postedAt ? new Date(item.postedAt).getTime() || null : null,
+        mapJobType(item.jobType?.[0]), item.descriptionText ?? '',
+        '[]', '[]',
+        item.salary?.salaryMin ?? null,
+        item.salary?.salaryMax ?? null,
+        item.salary?.salaryCurrency ?? null,
+        item.datePublished ? new Date(item.datePublished).getTime() || null : null,
         now, now,
       ).run();
 
       try {
-        const text = `${item.positionName} at ${item.company}. ${item.description?.slice(0, 500) ?? ''}`;
+        const text = `${item.title} at ${item.companyName}. ${item.descriptionText?.slice(0, 500) ?? ''}`;
         const emb = await env.AI.run('@cf/baai/bge-base-en-v1.5', { text: [text] });
         await env.VECTORIZE_JOBS.upsert([{ id, values: (emb as { data: number[][] }).data[0], metadata: { job_id: id } }]);
       } catch { /* embedding errors don't block */ }
