@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../api/client.ts';
 import { JobCard } from '../components/JobCard.tsx';
+import { Search, MapPin, Filter, Database, Briefcase, Bookmark, Zap } from 'lucide-react';
 
 interface Job {
   id: string;
@@ -113,7 +114,7 @@ export function Jobs() {
       return;
     }
     setIngesting(true);
-    setIngestMsg('Fetching jobs… this takes ~30s.');
+    setIngestMsg('Fetching jobs... this takes ~30s.');
     try {
       await api.admin.ingest(ingestKeyword.trim(), clearJobs);
       setTimeout(() => { fetchJobs(0); setIngestMsg('Done! Jobs updated.'); setIngesting(false); }, 35000);
@@ -123,81 +124,132 @@ export function Jobs() {
   };
 
   return (
-    <div>
-      <div className="bg-white border border-gray-200 rounded-xl p-4 mb-5 space-y-3">
+    <div className="space-y-8">
+      {/* Dashboard Stats Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="bg-white/60 backdrop-blur-sm rounded-[2rem] p-6 border border-white/50 flex flex-col items-center justify-center">
+          <div className="flex items-center gap-2 mb-2">
+            <Briefcase className="text-blue-500" size={24} />
+            <span className="text-4xl font-light text-gray-900">{total}</span>
+          </div>
+          <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Jobs Found</span>
+        </div>
+        <div className="bg-white/60 backdrop-blur-sm rounded-[2rem] p-6 border border-white/50 flex flex-col items-center justify-center">
+          <div className="flex items-center gap-2 mb-2">
+            <Bookmark className="text-yellow-500" size={24} />
+            <span className="text-4xl font-light text-gray-900">{savedIds.size}</span>
+          </div>
+          <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Saved Jobs</span>
+        </div>
+        <div className="bg-white/60 backdrop-blur-sm rounded-[2rem] p-6 border border-white/50 flex flex-col items-center justify-center">
+          <div className="flex items-center gap-2 mb-2">
+            <Zap className="text-purple-500" size={24} />
+            <span className="text-4xl font-light text-gray-900">{matchScores.size}</span>
+          </div>
+          <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Matches Computed</span>
+        </div>
+      </div>
+
+      <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 shadow-sm border border-white/50 space-y-6">
         {/* Filter row */}
-        <div className="flex gap-3 flex-wrap">
-          <input
-            type="search"
-            placeholder="Search jobs…"
-            value={q}
-            onChange={e => setQ(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1 min-w-40"
-          />
-          <input
-            type="search"
-            placeholder="Location…"
-            value={location}
-            onChange={e => setLocation(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-32"
-          />
-          <select value={remote} onChange={e => setRemote(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none">
-            <option value="">All work types</option>
-            <option value="remote">Remote</option>
-            <option value="hybrid">Hybrid</option>
-            <option value="onsite">Onsite</option>
-          </select>
-          <select value={type} onChange={e => setType(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none">
-            <option value="">All job types</option>
-            <option value="full_time">Full time</option>
-            <option value="contract">Contract</option>
-            <option value="part_time">Part time</option>
-          </select>
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="search"
+              placeholder="Search jobs..."
+              value={q}
+              onChange={e => setQ(e.target.value)}
+              className="w-full bg-white border-none rounded-full pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2c2d30]/20 shadow-inner"
+            />
+          </div>
+          <div className="relative flex-1">
+            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="search"
+              placeholder="Location..."
+              value={location}
+              onChange={e => setLocation(e.target.value)}
+              className="w-full bg-white border-none rounded-full pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2c2d30]/20 shadow-inner"
+            />
+          </div>
+          <div className="flex-1 flex gap-4">
+            <div className="relative flex-1">
+              <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <select 
+                value={remote} 
+                onChange={e => setRemote(e.target.value)} 
+                className="w-full bg-white border-none rounded-full pl-12 pr-4 py-3 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-[#2c2d30]/20 shadow-inner"
+              >
+                <option value="">All work types</option>
+                <option value="remote">Remote</option>
+                <option value="hybrid">Hybrid</option>
+                <option value="onsite">Onsite</option>
+              </select>
+            </div>
+            <div className="relative flex-1">
+              <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <select 
+                value={type} 
+                onChange={e => setType(e.target.value)} 
+                className="w-full bg-white border-none rounded-full pl-12 pr-4 py-3 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-[#2c2d30]/20 shadow-inner"
+              >
+                <option value="">All job types</option>
+                <option value="full_time">Full time</option>
+                <option value="contract">Contract</option>
+                <option value="part_time">Part time</option>
+              </select>
+            </div>
+          </div>
         </div>
 
-        <div className="border-t border-gray-100" />
+        <div className="border-t border-gray-200/60" />
 
         {/* Fetch by keyword row */}
         <div>
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Fetch new jobs by keyword</p>
-          <div className="flex gap-2 flex-wrap items-center">
-            <input
-              type="text"
-              placeholder="e.g. Python backend (comma = multiple)"
-              value={ingestKeyword}
-              onChange={e => setIngestKeyword(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && !ingesting && handleIngest()}
-              disabled={ingesting}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1 min-w-56 disabled:opacity-50"
-            />
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Fetch new jobs from remote sources</p>
+          <div className="flex flex-col sm:flex-row gap-3 items-center">
+            <div className="relative flex-1 w-full">
+              <Database className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <input
+                type="text"
+                placeholder="e.g. Python backend (comma = multiple)"
+                value={ingestKeyword}
+                onChange={e => setIngestKeyword(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && !ingesting && handleIngest()}
+                disabled={ingesting}
+                className="w-full bg-white border-none rounded-full pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2c2d30]/20 disabled:opacity-50 shadow-inner"
+              />
+            </div>
             <button
               onClick={handleIngest}
               disabled={ingesting}
-              className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors whitespace-nowrap"
+              className="w-full sm:w-auto text-sm font-medium bg-[#2c2d30] text-white px-6 py-3 rounded-full hover:bg-black disabled:opacity-50 transition-all shadow-md flex items-center justify-center gap-2"
             >
-              {ingesting ? 'Fetching…' : 'Search & fetch'}
+              <Database size={16} />
+              {ingesting ? 'Fetching...' : 'Search & fetch'}
             </button>
-            <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-600 cursor-pointer ml-2">
               <input
                 type="checkbox"
                 checked={clearJobs}
                 onChange={e => setClearJobs(e.target.checked)}
-                className="rounded"
+                className="rounded text-[#2c2d30] focus:ring-[#2c2d30] border-gray-300 w-4 h-4"
               />
-              Clear existing first
+              Clear existing
             </label>
           </div>
-          {ingestMsg && <p className="text-sm text-gray-500 mt-2">{ingestMsg}</p>}
+          {ingestMsg && <p className="text-sm font-medium text-blue-600 mt-3">{ingestMsg}</p>}
         </div>
       </div>
 
-      {loading && <div className="text-gray-400 text-sm mb-4">Loading…</div>}
+      {loading && (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+      )}
 
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm text-gray-500">{total} jobs found</span>
-      </div>
-
-      <div className="space-y-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {jobs.map(job => (
           <JobCard
             key={job.id}
@@ -213,25 +265,29 @@ export function Jobs() {
       </div>
 
       {jobs.length === 0 && !loading && (
-        <div className="text-gray-400 text-center py-12">No jobs found</div>
+        <div className="bg-white/50 backdrop-blur-sm rounded-[2rem] border border-white/50 py-16 flex flex-col items-center justify-center text-gray-400">
+          <Search size={48} className="mb-4 text-gray-300" />
+          <p className="text-lg font-medium text-gray-500">No jobs found</p>
+          <p className="text-sm">Try adjusting your filters or fetch new jobs.</p>
+        </div>
       )}
 
       {total > limit && (
-        <div className="flex justify-between mt-6">
+        <div className="flex justify-between items-center mt-8 bg-white/60 backdrop-blur-sm rounded-full px-6 py-3 border border-white/50">
           <button
             onClick={() => fetchJobs(Math.max(0, offset - limit))}
             disabled={offset === 0}
-            className="text-sm text-blue-600 hover:underline disabled:text-gray-400 disabled:no-underline"
+            className="text-sm font-medium bg-white px-4 py-2 rounded-full hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition-colors shadow-sm"
           >
             Previous
           </button>
-          <span className="text-sm text-gray-500">
-            {offset + 1}–{Math.min(offset + limit, total)} of {total}
+          <span className="text-sm font-semibold text-gray-600">
+            {offset + 1} - {Math.min(offset + limit, total)} of {total}
           </span>
           <button
             onClick={() => fetchJobs(offset + limit)}
             disabled={offset + limit >= total}
-            className="text-sm text-blue-600 hover:underline disabled:text-gray-400 disabled:no-underline"
+            className="text-sm font-medium bg-white px-4 py-2 rounded-full hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition-colors shadow-sm"
           >
             Next
           </button>

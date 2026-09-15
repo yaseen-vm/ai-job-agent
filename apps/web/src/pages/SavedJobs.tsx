@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api/client.ts';
 import { JobCard } from '../components/JobCard.tsx';
+import { Sparkles, Bookmark } from 'lucide-react';
 
 export function SavedJobs() {
   const [savedJobs, setSavedJobs] = useState<Array<Record<string, unknown>>>([]);
@@ -38,29 +39,45 @@ export function SavedJobs() {
     }
   };
 
-  if (loading) return <div className="text-gray-400">Loading…</div>;
+  if (loading) return (
+    <div className="flex justify-center items-center py-12">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+    </div>
+  );
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Saved jobs</h1>
+    <div className="space-y-8">
+      <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 shadow-sm border border-white/50 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className="bg-yellow-100 text-yellow-600 p-3 rounded-full">
+            <Bookmark size={24} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Saved Jobs</h1>
+            <p className="text-sm font-medium text-gray-500">{savedJobs.length} jobs saved</p>
+          </div>
+        </div>
+        
         {savedJobs.length > 0 && (
           <button
             onClick={handleRank}
             disabled={ranking}
-            className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 text-sm font-medium bg-[#2c2d30] text-white px-6 py-3 rounded-full hover:bg-black disabled:opacity-50 transition-all shadow-md"
           >
-            {ranking ? 'Ranking…' : 'Rank by fit'}
+            <Sparkles size={16} className={ranking ? 'animate-pulse text-yellow-400' : 'text-yellow-400'} />
+            {ranking ? 'Ranking...' : 'Rank by fit'}
           </button>
         )}
       </div>
 
       {savedJobs.length === 0 ? (
-        <div className="text-gray-400 text-center py-12">
-          No saved jobs yet. Browse jobs and click ★ to save them.
+        <div className="bg-white/50 backdrop-blur-sm rounded-[2rem] border border-white/50 py-16 flex flex-col items-center justify-center text-gray-400">
+          <Bookmark size={48} className="mb-4 text-gray-300" />
+          <p className="text-lg font-medium text-gray-500">No saved jobs yet</p>
+          <p className="text-sm">Browse jobs and click the star icon to save them.</p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {savedJobs
             .slice()
             .sort((a, b) => ((b.score as number) ?? 0) - ((a.score as number) ?? 0))
