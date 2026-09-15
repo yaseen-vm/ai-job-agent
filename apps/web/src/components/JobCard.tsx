@@ -14,11 +14,14 @@ interface Job {
   score?: number;
 }
 
-export function JobCard({ job, saved, onSave, onUnsave }: {
+export function JobCard({ job, saved, onSave, onUnsave, matchScore, matchLoading, onComputeMatch }: {
   job: Job;
   saved?: boolean;
   onSave?: (id: string) => void;
   onUnsave?: (id: string) => void;
+  matchScore?: number;
+  matchLoading?: boolean;
+  onComputeMatch?: (id: string) => void;
 }) {
   const salary = job.min_salary || job.max_salary
     ? `${job.salary_currency ?? '$'}${job.min_salary ? (job.min_salary / 1000).toFixed(0) + 'k' : ''}${job.max_salary ? '–' + (job.max_salary / 1000).toFixed(0) + 'k' : ''}`
@@ -38,11 +41,20 @@ export function JobCard({ job, saved, onSave, onUnsave }: {
           <div className="text-sm text-gray-500 mt-0.5">{job.company}</div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {job.score !== undefined && (
-            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${scoreColor(job.score)}`}>
-              {Math.round(job.score * 100)}% match
+          {matchScore !== undefined ? (
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${scoreColor(matchScore)}`}>
+              {Math.round(matchScore * 100)}% match
             </span>
-          )}
+          ) : matchLoading ? (
+            <span className="text-xs text-gray-400 px-2 py-0.5">Computing…</span>
+          ) : onComputeMatch ? (
+            <button
+              onClick={() => onComputeMatch(job.id)}
+              className="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-0.5 rounded-full border border-blue-200 transition-colors whitespace-nowrap"
+            >
+              Compute match
+            </button>
+          ) : null}
           <button
             onClick={() => saved ? onUnsave?.(job.id) : onSave?.(job.id)}
             className={`text-lg transition-colors ${saved ? 'text-yellow-500 hover:text-gray-400' : 'text-gray-300 hover:text-yellow-500'}`}
