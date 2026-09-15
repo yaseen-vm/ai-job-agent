@@ -55,7 +55,7 @@ async function dispatch(env: ApifyEnv): Promise<void> {
     for (const term of terms) {
       try {
         const runId = await startActorRun(env.APIFY_API_TOKEN, {
-          position: term,
+          query: term,
           country: 'us',
           maxItems: 50,
           saveOnlyUniqueItems: true,

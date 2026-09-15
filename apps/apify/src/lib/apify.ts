@@ -6,7 +6,7 @@ const APIFY_BASE = 'https://api.apify.com/v2';
 const ACTOR_ID = 'borderline~indeed-scraper';
 
 export interface ActorInput {
-  position: string;
+  query: string;
   country: string;
   maxItems: number;
   saveOnlyUniqueItems?: boolean;

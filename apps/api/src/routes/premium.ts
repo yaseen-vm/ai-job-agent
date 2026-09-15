@@ -54,7 +54,7 @@ premiumRouter.post('/search', async (c) => {
       const res = await fetch(`${APIFY_BASE}/acts/${ACTOR_ID}/runs?token=${c.env.APIFY_API_TOKEN}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ position: term, country: 'us', maxItems: 25, saveOnlyUniqueItems: true }),
+        body: JSON.stringify({ query: term, country: 'us', maxItems: 25, saveOnlyUniqueItems: true }),
       });
       if (!res.ok) { console.error(`Apify start failed for "${term}": ${res.status}`); continue; }
       const data = await res.json<{ data: { id: string } }>();
