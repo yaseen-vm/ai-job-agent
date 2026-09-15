@@ -1,9 +1,9 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/auth.ts';
-import { Settings, Bell, User, Briefcase, Bookmark, FileText, LayoutDashboard } from 'lucide-react';
+import { Settings, Bell, User, Briefcase, Bookmark, FileText, LayoutDashboard, ShieldCheck } from 'lucide-react';
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { user, logout } = useAuthStore();
+  const { user, isAdmin, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -43,6 +43,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {navLink('/saved', 'Saved')}
             {navLink('/applications', 'Applications')}
             {navLink('/profile', 'Profile')}
+            {isAdmin && navLink('/admin', 'Admin')}
           </nav>
           
           <div className="flex items-center gap-4">

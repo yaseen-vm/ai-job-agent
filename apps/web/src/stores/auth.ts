@@ -3,7 +3,8 @@ import { create } from 'zustand';
 interface AuthState {
   token: string | null;
   user: { id: string; email: string } | null;
-  login: (token: string, user: { id: string; email: string }) => void;
+  isAdmin: boolean;
+  login: (token: string, user: { id: string; email: string }, isAdmin?: boolean) => void;
   logout: () => void;
 }
 
@@ -13,14 +14,17 @@ export const useAuthStore = create<AuthState>((set) => ({
     try { return JSON.parse(localStorage.getItem('user') ?? 'null') as { id: string; email: string } | null; }
     catch { return null; }
   })(),
-  login: (token, user) => {
+  isAdmin: localStorage.getItem('isAdmin') === 'true',
+  login: (token, user, isAdmin = false) => {
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));
-    set({ token, user });
+    localStorage.setItem('isAdmin', String(isAdmin));
+    set({ token, user, isAdmin });
   },
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    set({ token: null, user: null });
+    localStorage.removeItem('isAdmin');
+    set({ token: null, user: null, isAdmin: false });
   },
 }));

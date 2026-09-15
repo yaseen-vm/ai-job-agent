@@ -88,6 +88,23 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ keyword, clear }),
       }),
+    listUsers: (search?: string) => {
+      const qs = search ? `?search=${encodeURIComponent(search)}` : '';
+      return request<{ users: { id: string; email: string; created_at: number }[] }>(`/admin/users${qs}`);
+    },
+    grantSubscription: (userId: string, durationDays: number) =>
+      request<{ status: string; expiresAt: number }>('/subscriptions', {
+        method: 'POST',
+        body: JSON.stringify({ userId, durationDays }),
+      }),
+    revokeSubscription: (userId: string) =>
+      request<{ status: string }>(`/admin/subscriptions/${userId}`, { method: 'DELETE' }),
+    getUserSubscription: (userId: string) =>
+      request<{ subscription: { id: string; plan: string; status: string; started_at: number; expires_at: number | null } | null }>(`/admin/subscriptions/${userId}`),
+  },
+
+  subscriptions: {
+    me: () => request<{ subscription: { id: string; plan: string; status: string; started_at: number; expires_at: number | null } }>('/subscriptions/me'),
   },
 
   agents: {
