@@ -1,0 +1,31 @@
+name = "ai-job-agent-apify"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ai-job-agent-db"
+database_id = "7781002f-852a-4156-bd7a-3d31f2585cc0"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "1e06366b25ae4199bad36705e2a11953"
+
+[[vectorize]]
+binding = "VECTORIZE_JOBS"
+index_name = "job-embeddings"
+
+[ai]
+binding = "AI"
+
+[triggers]
+# 01:00 UTC  — dispatch: start Apify runs for subscribed users
+# 03:00 UTC  — collect: fetch completed runs and insert jobs
+crons = ["0 1 * * *", "0 3 * * *"]
+
+[vars]
+ENVIRONMENT = "development"
+
+# Secrets (set via: wrangler secret put APIFY_API_TOKEN)
+# APIFY_API_TOKEN

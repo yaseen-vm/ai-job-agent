@@ -6,6 +6,7 @@ import { jobsRouter } from './routes/jobs.ts';
 import { savedJobsRouter } from './routes/saved-jobs.ts';
 import { applicationsRouter } from './routes/applications.ts';
 import { agentsRouter } from './routes/agents.ts';
+import { subscriptionsRouter } from './routes/subscriptions.ts';
 import { fetchJobs } from './lib/jobsearch.ts';
 import { ulid } from './lib/ulid.ts';
 import type { Env } from './types.ts';
@@ -30,6 +31,7 @@ app.route('/jobs', jobsRouter);
 app.route('/saved-jobs', savedJobsRouter);
 app.route('/applications', applicationsRouter);
 app.route('/agents', agentsRouter);
+app.route('/subscriptions', subscriptionsRouter);
 
 app.get('/health', (c) => c.json({ status: 'ok' }));
 
