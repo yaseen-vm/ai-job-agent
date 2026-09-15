@@ -26,14 +26,16 @@ Respond ONLY with a valid JSON object and nothing else:
       { role: 'user', content: `<resume>\n${resumeText}\n</resume>\n\nExtract the profile. Respond only with JSON.` },
     ],
     max_tokens: 1024,
-  });
-  const raw = (aiResult as { response?: string }).response ?? '';
+    stream: false,
+  }) as Record<string, unknown>;
+  const responseVal = aiResult?.response;
+  const raw = typeof responseVal === 'string' ? responseVal : JSON.stringify(responseVal ?? '');
 
   let extracted: Record<string, unknown>;
   try {
     extracted = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] ?? raw) as Record<string, unknown>;
   } catch {
-    throw new Error(`Failed to parse extraction output: ${raw.slice(0, 200)}`);
+    throw new Error(`Failed to parse extraction output: ${String(raw).slice(0, 200)}`);
   }
   toolCalls.push({ tool: 'cf_ai_extract', input: { model: EXTRACTION_MODEL }, output: extracted });
 
