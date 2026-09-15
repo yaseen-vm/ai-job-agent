@@ -129,7 +129,7 @@ export function Jobs() {
         <div className="flex gap-2 flex-wrap items-center">
           <input
             type="text"
-            placeholder="e.g. React developer, Python backend…"
+            placeholder="e.g. Python backend (comma = multiple searches)"
             value={ingestKeyword}
             onChange={e => setIngestKeyword(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && !ingesting && handleIngest()}

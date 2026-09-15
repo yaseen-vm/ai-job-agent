@@ -6,7 +6,7 @@ import { jobsRouter } from './routes/jobs.ts';
 import { savedJobsRouter } from './routes/saved-jobs.ts';
 import { applicationsRouter } from './routes/applications.ts';
 import { agentsRouter } from './routes/agents.ts';
-import { fetchRemotiveJobs, normalizeRemotiveJob } from './lib/remotive.ts';
+import { fetchJobs } from './lib/jobsearch.ts';
 import { ulid } from './lib/ulid.ts';
 import type { Env } from './types.ts';
 
@@ -49,17 +49,19 @@ app.onError((err, c) => {
 });
 
 async function triggerIngestion(env: Env, keyword?: string) {
-  const categories = keyword ? [undefined] : ['software-dev', 'devops-sysadmin', 'product'];
+  const terms = keyword
+    ? keyword.split(',').map(k => k.trim()).filter(Boolean)
+    : ['software engineer', 'devops', 'product manager'];
+
   let inserted = 0;
 
-  for (const category of categories) {
-    let rawJobs;
-    try { rawJobs = await fetchRemotiveJobs(category, keyword); }
-    catch (e) { console.error(`Remotive fetch failed:`, e); continue; }
+  for (const term of terms) {
+    let jobs;
+    try { jobs = await fetchJobs(term); }
+    catch (e) { console.error(`Job fetch failed for "${term}":`, e); continue; }
 
-    for (const raw of rawJobs) {
+    for (const job of jobs) {
       try {
-        const job = normalizeRemotiveJob(raw);
         const existing = await env.DB
           .prepare('SELECT id FROM jobs WHERE source_name=? AND source_job_id=?')
           .bind(job.source_name, job.source_job_id).first<{ id: string }>();
